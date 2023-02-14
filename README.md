@@ -1,3 +1,6 @@
 # Boid-Simulation
 
-Requires Tkinter, threading, and queue.
+Requires Tkinter and python-vectors.
+
+Tkinter:            pip install tk
+python-vectors:     pip install python-vectors
