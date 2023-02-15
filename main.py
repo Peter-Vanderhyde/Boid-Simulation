@@ -11,7 +11,7 @@ from boid import Boid
 def create_boids(num_of_boids, width, height):
     """Randomly places boids on the screen and returns a list of the created line objects."""
 
-    SIZE = 7
+    SIZE = 8
     boids = []
     for i in range(num_of_boids):
         x, y = random.randint(0, width), random.randint(0, height)
