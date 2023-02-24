@@ -3,23 +3,21 @@ import sys
 import math
 import pygame
 from pygame.locals import *
-from pygame.math import Vector2
 from canvas import Canvas
 from boid import Boid
+from vector import Vector
+import simulation
 
 
 def create_boids(num_of_boids, width, height):
     """Randomly places boids on the screen and returns a list of the created line objects."""
 
-    SIZE = 8
     boids = []
     for i in range(num_of_boids):
         x, y = random.randint(0, width), random.randint(0, height)
-        angle = random.randint(0, 360)
-        # tip_x = SIZE * math.cos(math.radians(angle))
-        # tip_y = SIZE * math.sin(math.radians(angle))
-        center = Vector2(x, y)
-        boid = Boid(center, angle, SIZE)
+        center = Vector(x, y)
+        velocity = Vector(random.random(), random.random()).normalize()
+        boid = Boid(center, velocity, 1)
         boids.append(boid)
     
     return boids
@@ -40,7 +38,10 @@ def main(width, height):
                     pygame.quit()
                     sys.exit()
         
-        canvas.draw(boids)
+        simulation.simulate(boids)
+        
+        canvas.draw_background()
+        canvas.draw_boids(boids)
         pygame.display.update()
 
 

@@ -31,11 +31,51 @@ class Vector:
         else:
             raise RuntimeError(f"Attempt to multiply Vector by {type(other)}.")
     
-    def __div__(self, other):
+    def __truediv__(self, other):
         if isinstance(other, (int, float)):
             return Vector(self.x / other, self.y / other)
         else:
             raise RuntimeError(f"Attempt to divide Vector by {type(other)}.")
     
+    def __itruediv__(self, other):
+        if isinstance(other, (int, float)):
+            self.x /= other
+            self.y /= other
+            return self
+        else:
+            raise RuntimeError(f"Attempt to divide Vector by {type(other)}.")
+    
+    def __floordiv__(self, other):
+        if isinstance(other, (int, float)):
+            return Vector(self.x // other, self.y // other)
+        else:
+            raise RuntimeError(f"Attempt to divide Vector by {type(other)}.")
+    
+    def __ifloordiv__(self, other):
+        if isinstance(other, (int, float)):
+            self.x //= other
+            self.y //= other
+            return self
+        else:
+            raise RuntimeError(f"Attempt to divide Vector by {type(other)}.")
+    
     def __str__(self):
         return f"({self.x}, {self.y})"
+    
+    def values(self):
+        return self.x, self.y
+    
+    def length(self):
+        """Built in numpy function for finding the length of a numpy array."""
+
+        return np.linalg.norm(np.array(self.values()))
+    
+    def normalize(self):
+        length = self.length()
+        return self.__truediv__(length)
+
+
+if __name__ == '__main__':
+    v = Vector(3, 4)
+    v /= 10
+    print(v)

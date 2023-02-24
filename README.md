@@ -1,6 +1,6 @@
 # Boid-Simulation
 
-Requires Tkinter and python-vectors.
+Requires pygame and NumPy.
 
-Tkinter:            pip install tk
-python-vectors:     pip install python-vectors
+Pygame: pip install pygame
+NumPy: pip install numpy
