@@ -21,7 +21,6 @@ class Canvas:
             point_3 = boid.position - boid.velocity * SIZE - perpendicular * SIZE
             boid_points = [point_1.values(),
                             point_2.values(),
-                            (boid.position - boid.velocity * SIZE * 0.75).values(),
                             point_3.values()]
             pygame.draw.polygon(self.screen, (0, 0, 0), boid_points)
             # pygame.draw.line(self.screen, (255, 0, 0), boid.center, boid.center + boid.direction)

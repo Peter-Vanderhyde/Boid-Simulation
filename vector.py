@@ -15,10 +15,8 @@ class Vector:
             raise RuntimeError(f"Cannot add Vector and {type(other)}.")
     
     def __sub__(self, other):
-        if isinstance(other, Vector):
-            return Vector(self.x - other.x, self.y - other.y)
-        elif isinstance(other, (int, float)):
-            return Vector(self.x - other, self.y - other)
+        if isinstance(other, (Vector, int, float)):
+            return self.__add__(-other)
         else:
             raise RuntimeError(f"Cannot subtract Vector and {type(other)}.")
     
