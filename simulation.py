@@ -1,7 +1,7 @@
 from vector import Vector
 
 
-def simulate(dt, boids, active_area, settings):
+def simulate(boids, active_area, settings):
     for boid in boids:
         close = Vector(0, 0)
         neighboring_boids = 0
@@ -39,7 +39,7 @@ def simulate(dt, boids, active_area, settings):
             boid.velocity.y = (boid.velocity.y / speed) * boid.min_speed
 
         margin_pos_x, margin_pos_y = active_area[0]
-        margin_width, margin_height = active_area[1], active_area[2]
+        margin_width, margin_height = active_area[1]
         if boid.position.y < margin_pos_y:
             boid.velocity.y = boid.velocity.y + settings["turn factor"]
         if boid.position.x < margin_pos_x:

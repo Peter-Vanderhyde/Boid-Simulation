@@ -1,14 +1,10 @@
 import random
-import sys
 import pygame
 from pygame.locals import *
 from canvas import Canvas
 from boid import Boid
 from vector import Vector
 import simulation
-import time
-
-SHOW_CIRCLES = False
 
 settings = {
     "view distance": 50,
@@ -24,7 +20,7 @@ settings = {
 }
 
 
-def create_boids(num_of_boids, width, height):
+def create_boids(width, height, num_of_boids=10):
     """Randomly places boids on the screen and returns a list of the created line objects."""
 
     boids = []
@@ -44,36 +40,30 @@ def create_boids(num_of_boids, width, height):
 
 def main(width=1920, height=1080):
     global SHOW_CIRCLES
+    
     FPS = 60
     clock = pygame.time.Clock()
-    last_time = time.time()
+    
     screen = pygame.display.set_mode((width, height), FULLSCREEN)
     canvas = Canvas(screen, (255, 255, 255))
     width, height = canvas.width, canvas.height
+    
     margin = settings["margin"]
+    # Create rectangle area the boids will try to stay within
+    # ((corner_x, corner_y), (width, height))
     active_area = ((margin, margin),
-                   width - margin * 2,
-                   height - margin * 2)
-    boids = create_boids(50, width, height)
+                   (width - margin * 2, height - margin * 2))
+    
+    boids = create_boids(width, height, num_of_boids=50)
 
     while True:
-        dt = time.time() - last_time
-        last_time = time.time()
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
-                elif event.key == K_RETURN:
-                    SHOW_CIRCLES = not SHOW_CIRCLES
+        canvas.get_events() # Keypress events
         
-        simulation.simulate(dt, boids, active_area, settings)
+        simulation.simulate(boids, active_area, settings)
         
         canvas.draw_background(active_area)
-        canvas.draw_boids(boids, settings["boid size"], SHOW_CIRCLES)
+        canvas.draw_boids(boids, settings["boid size"])
+
         pygame.display.update()
         clock.tick(FPS)
 

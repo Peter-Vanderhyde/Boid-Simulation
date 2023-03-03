@@ -1,18 +1,20 @@
 import pygame
+import sys
 from vector import Vector
 
 class Canvas:
-    def __init__(self, screen, bg_color):
+    def __init__(self, screen, bg_color, show_circles=False):
         self.screen = screen
         self.bg_color = bg_color
         self.width = screen.get_width()
         self.height = screen.get_height()
+        self.show_circles = show_circles
     
     def draw_background(self, active_area):
         self.screen.fill(self.bg_color)
-        pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(active_area[0], (active_area[1], active_area[2])), 1)
+        pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(active_area[0], active_area[1]), 1)
     
-    def draw_boids(self, boids, size, show_circles):
+    def draw_boids(self, boids, size):
         for boid in boids:
             perpendicular = Vector(boid.velocity.y, -boid.velocity.x).normalize()
             perpendicular /= 2
@@ -23,13 +25,18 @@ class Canvas:
                             point_2.values(),
                             point_3.values()]
             pygame.draw.polygon(self.screen, (0, 0, 0), boid_points)
-            if show_circles:
+            if self.show_circles:
                 pygame.draw.circle(self.screen, (150, 255, 150), boid.position.values(), boid.view_distance, 1)
                 pygame.draw.circle(self.screen, (255, 150, 150), boid.position.values(), boid.separation_distance, 1)
-            # pygame.draw.line(self.screen, (255, 0, 0), boid.center, boid.center + boid.direction)
-            # pygame.draw.line(self.screen, (0, 255, 0), boid.center, boid.center - boid.direction)
-            # pygame.draw.line(self.screen, (0, 0, 0), boid.center + boid.direction, boid.center - boid.direction)
     
-    def draw(self, boids):
-        self.draw_background()
-        self.draw_boids(boids)
+    def get_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == pygame.K_RETURN:
+                    self.show_circles = not self.show_circles
