@@ -9,8 +9,8 @@ from vector import Vector
 import simulation
 import time
 
-VIEW_DISTANCE = 200
-SEPARATION_DISTANCE = 50
+VIEW_DISTANCE = 40
+SEPARATION_DISTANCE = 8
 
 
 def create_boids(num_of_boids, width, height):
@@ -20,21 +20,27 @@ def create_boids(num_of_boids, width, height):
     for i in range(num_of_boids):
         x, y = random.randint(0, width), random.randint(0, height)
         center = Vector(x, y)
-        velocity = Vector(random.random(), random.random()).normalize()
-        boid = Boid(center, velocity, 1, VIEW_DISTANCE, SEPARATION_DISTANCE)
+        velocity = Vector(random.random(), random.random()).normalize() * random.randint(2, 3)
+        boid = Boid(center, velocity, 3, 2, VIEW_DISTANCE, SEPARATION_DISTANCE)
         boids.append(boid)
     
     return boids
 
 
 def main(width, height):
-    dt = time.time()
+    FPS = 60
+    clock = pygame.time.Clock()
+    last_time = time.time()
     screen = pygame.display.set_mode((width, height))
     canvas = Canvas(screen, (255, 255, 255))
-    boids = create_boids(500, canvas.width, canvas.height)
+    active_area = ((100, 100),
+                   width - 200,
+                   height - 200)
+    boids = create_boids(20, canvas.width, canvas.height)
 
     while True:
-        dt = time.time() - dt
+        dt = time.time() - last_time
+        last_time = time.time()
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -44,11 +50,12 @@ def main(width, height):
                     pygame.quit()
                     sys.exit()
         
-        simulation.simulate(dt, boids)
+        simulation.simulate(dt, boids, active_area)
         
-        canvas.draw_background()
+        canvas.draw_background(active_area)
         canvas.draw_boids(boids)
         pygame.display.update()
+        clock.tick(FPS)
 
 
 if __name__ == "__main__":
@@ -57,6 +64,6 @@ if __name__ == "__main__":
     #     raise RuntimeError("Main file execution requires command line arguments: <main_filename> <window_width> <window_height>")
     # else:
     #     WIDTH, HEIGHT = args[-2], args[-1]
-    WIDTH, HEIGHT = 1100, 600
+    WIDTH, HEIGHT = 1280, 720
 
     main(WIDTH, HEIGHT)
