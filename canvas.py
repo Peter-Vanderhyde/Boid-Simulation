@@ -12,7 +12,7 @@ class Canvas:
         self.screen.fill(self.bg_color)
         pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(active_area[0], (active_area[1], active_area[2])), 1)
     
-    def draw_boids(self, boids):
+    def draw_boids(self, boids, show_circles):
         SIZE = 8
         for boid in boids:
             perpendicular = Vector(boid.velocity.y, -boid.velocity.x).normalize()
@@ -24,8 +24,9 @@ class Canvas:
                             point_2.values(),
                             point_3.values()]
             pygame.draw.polygon(self.screen, (0, 0, 0), boid_points)
-            # pygame.draw.circle(self.screen, (0, 255, 0), boid.position.values(), boid.view_distance, 1)
-            # pygame.draw.circle(self.screen, (255, 0, 0), boid.position.values(), boid.separation_distance, 1)
+            if show_circles:
+                pygame.draw.circle(self.screen, (150, 255, 150), boid.position.values(), boid.view_distance, 1)
+                pygame.draw.circle(self.screen, (255, 150, 150), boid.position.values(), boid.separation_distance, 1)
             # pygame.draw.line(self.screen, (255, 0, 0), boid.center, boid.center + boid.direction)
             # pygame.draw.line(self.screen, (0, 255, 0), boid.center, boid.center - boid.direction)
             # pygame.draw.line(self.screen, (0, 0, 0), boid.center + boid.direction, boid.center - boid.direction)

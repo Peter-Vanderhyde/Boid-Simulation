@@ -2,7 +2,7 @@ from vector import Vector
 import math
 
 class Boid:
-    def __init__(self, position, velocity, max_speed, min_speed, view_distance, separation_distance):
+    def __init__(self, position, velocity, min_speed, max_speed, view_distance, separation_distance):
         self.position = position
         self.velocity = velocity
         self.max_speed = max_speed

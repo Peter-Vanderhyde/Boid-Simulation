@@ -1,6 +1,5 @@
 import random
 import sys
-import math
 import pygame
 from pygame.locals import *
 from canvas import Canvas
@@ -9,8 +8,19 @@ from vector import Vector
 import simulation
 import time
 
-VIEW_DISTANCE = 40
-SEPARATION_DISTANCE = 8
+SHOW_CIRCLES = False
+
+settings = {
+    "view distance": 50,
+    "separation distance": 15,
+    "minimum speed": 2,
+    "maximum speed": 6,
+    "centering factor": 0.0005,
+    "matching factor": 0.05,
+    "avoid factor": 0.05,
+    "turn factor": 0.2,
+    "margin": 100
+}
 
 
 def create_boids(num_of_boids, width, height):
@@ -20,23 +30,29 @@ def create_boids(num_of_boids, width, height):
     for i in range(num_of_boids):
         x, y = random.randint(0, width), random.randint(0, height)
         center = Vector(x, y)
-        velocity = Vector(random.random(), random.random()).normalize() * random.randint(2, 3)
-        boid = Boid(center, velocity, 3, 2, VIEW_DISTANCE, SEPARATION_DISTANCE)
+        velocity = Vector(random.random(), random.random()).normalize() * random.randint(settings["minimum speed"], settings["maximum speed"])
+        boid = Boid(center, velocity,
+                    settings["minimum speed"],
+                    settings["maximum speed"],
+                    settings["view distance"],
+                    settings["separation distance"])
         boids.append(boid)
     
     return boids
 
 
 def main(width, height):
+    global SHOW_CIRCLES
     FPS = 60
     clock = pygame.time.Clock()
     last_time = time.time()
     screen = pygame.display.set_mode((width, height))
     canvas = Canvas(screen, (255, 255, 255))
-    active_area = ((100, 100),
-                   width - 200,
-                   height - 200)
-    boids = create_boids(20, canvas.width, canvas.height)
+    margin = settings["margin"]
+    active_area = ((margin, margin),
+                   width - margin * 2,
+                   height - margin * 2)
+    boids = create_boids(75, canvas.width, canvas.height)
 
     while True:
         dt = time.time() - last_time
@@ -49,11 +65,13 @@ def main(width, height):
                 if event.key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+                elif event.key == K_RETURN:
+                    SHOW_CIRCLES = not SHOW_CIRCLES
         
-        simulation.simulate(dt, boids, active_area)
+        simulation.simulate(dt, boids, active_area, settings)
         
         canvas.draw_background(active_area)
-        canvas.draw_boids(boids)
+        canvas.draw_boids(boids, SHOW_CIRCLES)
         pygame.display.update()
         clock.tick(FPS)
 

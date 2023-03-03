@@ -3,12 +3,7 @@ from vector import Vector
 import math
 
 
-def simulate(dt, boids, active_area):
-    CENTERING_FACTOR = 0.0005
-    MATCHING_FACTOR = 0.05
-    AVOID_FACTOR = 0.05
-    TURN_FACTOR = 0.2
-    changes = []
+def simulate(dt, boids, active_area, settings):
     for boid in boids:
         close = Vector(0, 0)
         neighboring_boids = 0
@@ -33,10 +28,10 @@ def simulate(dt, boids, active_area):
             velocity_average = average_vel / neighboring_boids
 
             boid.velocity = (boid.velocity +
-                                (position_average - boid.position) * CENTERING_FACTOR +
-                                (velocity_average - boid.velocity) * MATCHING_FACTOR)
+                                (position_average - boid.position) * settings["centering factor"] +
+                                (velocity_average - boid.velocity) * settings["matching factor"])
         
-        boid.velocity = boid.velocity + (close * AVOID_FACTOR)
+        boid.velocity = boid.velocity + (close * settings["avoid factor"])
         speed = boid.velocity.length()
         if speed > boid.max_speed:
             boid.velocity.x = (boid.velocity.x / speed) * boid.max_speed
@@ -48,13 +43,13 @@ def simulate(dt, boids, active_area):
         margin_pos_x, margin_pos_y = active_area[0]
         margin_width, margin_height = active_area[1], active_area[2]
         if boid.position.y < margin_pos_y:
-            boid.velocity.y = boid.velocity.y + TURN_FACTOR
+            boid.velocity.y = boid.velocity.y + settings["turn factor"]
         if boid.position.x < margin_pos_x:
-            boid.velocity.x = boid.velocity.x + TURN_FACTOR
+            boid.velocity.x = boid.velocity.x + settings["turn factor"]
         if boid.position.y > margin_pos_y + margin_height:
-            boid.velocity.y = boid.velocity.y - TURN_FACTOR
+            boid.velocity.y = boid.velocity.y - settings["turn factor"]
         if boid.position.x > margin_pos_x + margin_width:
-            boid.velocity.x = boid.velocity.x - TURN_FACTOR
+            boid.velocity.x = boid.velocity.x - settings["turn factor"]
         
 
         boid.position += boid.velocity
