@@ -1,4 +1,4 @@
-import numpy as np
+import math
 
 
 class Vector:
@@ -64,9 +64,7 @@ class Vector:
         return self.x, self.y
     
     def length(self):
-        """Built in numpy function for finding the length of a numpy array."""
-
-        return np.linalg.norm(np.array(self.values()))
+        return math.sqrt(self.x * self.x + self.y * self.y)
     
     def normalize(self):
         length = self.length()

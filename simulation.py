@@ -1,6 +1,4 @@
-from boid import Boid
 from vector import Vector
-import math
 
 
 def simulate(dt, boids, active_area, settings):

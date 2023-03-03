@@ -19,7 +19,8 @@ settings = {
     "matching factor": 0.05,
     "avoid factor": 0.05,
     "turn factor": 0.2,
-    "margin": 100
+    "margin": 100,
+    "boid size": 8
 }
 
 
@@ -41,18 +42,19 @@ def create_boids(num_of_boids, width, height):
     return boids
 
 
-def main(width, height):
+def main(width=1920, height=1080):
     global SHOW_CIRCLES
     FPS = 60
     clock = pygame.time.Clock()
     last_time = time.time()
-    screen = pygame.display.set_mode((width, height))
+    screen = pygame.display.set_mode((width, height), FULLSCREEN)
     canvas = Canvas(screen, (255, 255, 255))
+    width, height = canvas.width, canvas.height
     margin = settings["margin"]
     active_area = ((margin, margin),
                    width - margin * 2,
                    height - margin * 2)
-    boids = create_boids(75, canvas.width, canvas.height)
+    boids = create_boids(50, width, height)
 
     while True:
         dt = time.time() - last_time
@@ -71,17 +73,10 @@ def main(width, height):
         simulation.simulate(dt, boids, active_area, settings)
         
         canvas.draw_background(active_area)
-        canvas.draw_boids(boids, SHOW_CIRCLES)
+        canvas.draw_boids(boids, settings["boid size"], SHOW_CIRCLES)
         pygame.display.update()
         clock.tick(FPS)
 
 
 if __name__ == "__main__":
-    # args = sys.argv
-    # if len(args) < 3:
-    #     raise RuntimeError("Main file execution requires command line arguments: <main_filename> <window_width> <window_height>")
-    # else:
-    #     WIDTH, HEIGHT = args[-2], args[-1]
-    WIDTH, HEIGHT = 1280, 720
-
-    main(WIDTH, HEIGHT)
+    main()

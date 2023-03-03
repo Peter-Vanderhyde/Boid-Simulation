@@ -12,14 +12,13 @@ class Canvas:
         self.screen.fill(self.bg_color)
         pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(active_area[0], (active_area[1], active_area[2])), 1)
     
-    def draw_boids(self, boids, show_circles):
-        SIZE = 8
+    def draw_boids(self, boids, size, show_circles):
         for boid in boids:
             perpendicular = Vector(boid.velocity.y, -boid.velocity.x).normalize()
             perpendicular /= 2
-            point_1 = boid.position + boid.velocity.normalize() * SIZE
-            point_2 = boid.position - boid.velocity.normalize() * SIZE + perpendicular * SIZE
-            point_3 = boid.position - boid.velocity.normalize() * SIZE - perpendicular * SIZE
+            point_1 = boid.position + boid.velocity.normalize() * size
+            point_2 = boid.position - boid.velocity.normalize() * size + perpendicular * size
+            point_3 = boid.position - boid.velocity.normalize() * size - perpendicular * size
             boid_points = [point_1.values(),
                             point_2.values(),
                             point_3.values()]
