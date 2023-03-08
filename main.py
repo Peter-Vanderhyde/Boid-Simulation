@@ -7,15 +7,15 @@ from vector import Vector
 import simulation
 
 settings = {
-    "view distance": 50,
+    "view distance": 100,
     "separation distance": 15,
     "minimum speed": 2,
-    "maximum speed": 6,
+    "maximum speed": 10,
     "centering factor": 0.0005,
     "matching factor": 0.05,
     "avoid factor": 0.05,
-    "turn factor": 0.2,
-    "margin": 100,
+    "turn factor": 0.13,
+    "margin": 300,
     "boid size": 8
 }
 
@@ -68,7 +68,7 @@ def main(width=1920, height=1080):
     while True:
         canvas.get_events() # Keypress events
         
-        simulation.simulate(boids, active_area, settings)
+        simulation.simulate(boids, active_area, settings, canvas)
         
         canvas.draw_background(active_area)
         canvas.draw_boids(boids, settings["boid size"])

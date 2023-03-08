@@ -11,6 +11,7 @@ class Canvas:
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
         self.show_circles = show_circles
+        self.gravity = False
     
     def draw_background(self, active_area):
         """Draws the screen with the background color with an active area box."""
@@ -22,11 +23,15 @@ class Canvas:
         """Draws boid polygons."""
 
         for boid in boids:
-            perpendicular = Vector(boid.velocity.y, -boid.velocity.x).normalize()
+            if boid.velocity.length() == 0:
+                use_velocity = Vector(0, 1)
+            else:
+                use_velocity = boid.velocity
+            perpendicular = Vector(use_velocity.y, -use_velocity.x).normalize()
             perpendicular /= 2
-            point_1 = boid.position + boid.velocity.normalize() * size
-            point_2 = boid.position - boid.velocity.normalize() * size + perpendicular * size
-            point_3 = boid.position - boid.velocity.normalize() * size - perpendicular * size
+            point_1 = boid.position + use_velocity.normalize() * size
+            point_2 = boid.position - use_velocity.normalize() * size + perpendicular * size
+            point_3 = boid.position - use_velocity.normalize() * size - perpendicular * size
             boid_points = [point_1.values(),
                             point_2.values(),
                             point_3.values()]
@@ -50,3 +55,5 @@ class Canvas:
                     sys.exit()
                 elif event.key == pygame.K_RETURN:
                     self.show_circles = not self.show_circles # Show view circles around boids
+                elif event.key == pygame.K_DOWN:
+                    self.gravity = not self.gravity

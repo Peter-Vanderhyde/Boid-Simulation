@@ -2,8 +2,20 @@ from vector import Vector
 
 
 
-def simulate(boids, active_area, settings):
+def simulate(boids, active_area, settings, canvas):
     """Simulates the movement of the boids based on the settings."""
+
+    if canvas.gravity:
+        for boid in boids:
+            if boid.position.y > canvas.height:
+                boid.position.y = canvas.height
+                boid.velocity = Vector(0, 0)
+            elif boid.position.y == canvas.height:
+                boid.velocity = Vector(0, 0)
+            else:
+                boid.velocity.y += 0.1
+            boid.position += boid.velocity
+        return
 
     for boid in boids:
         avoid_vector = Vector(0, 0)
@@ -41,6 +53,9 @@ def simulate(boids, active_area, settings):
 
         speed = boid.velocity.length()
         # Clamp speed
+
+        if speed == 0:
+            speed = 0.001
         if speed > boid.max_speed:
             boid.velocity.x = (boid.velocity.x / speed) * boid.max_speed
             boid.velocity.y = (boid.velocity.y / speed) * boid.max_speed
