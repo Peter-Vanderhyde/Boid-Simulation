@@ -13,7 +13,7 @@ def simulate(boids, active_area, settings, canvas):
             elif boid.position.y == canvas.height:
                 boid.velocity = Vector(0, 0)
             else:
-                boid.velocity.y += 0.1
+                boid.velocity.y += 0.3
             boid.position += boid.velocity
         return
 
