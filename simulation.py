@@ -20,7 +20,7 @@ def simulate(boids, active_area, settings):
 
                     # Testing squared distances because it's faster than using sqrt
                     if squared_distance < boid.separation_distance * boid.separation_distance:  # Is too close and needs to steer away
-                        avoid_vector += distance_to_other # Adding all the close boids results in the vector to steer away
+                        avoid_vector += distance_to_other # Adding all the close boids results in the vector pointing away from all
                     elif squared_distance < boid.view_distance * boid.view_distance:  # Not too close, but still in view
                         average_pos += other.position
                         average_vel += other.velocity
@@ -40,6 +40,8 @@ def simulate(boids, active_area, settings):
         boid.velocity = boid.velocity + (avoid_vector * settings["avoid factor"])
 
         speed = boid.velocity.length()
+        if speed == 0:
+            speed = 0.0001
         # Clamp speed
         if speed > boid.max_speed:
             boid.velocity.x = (boid.velocity.x / speed) * boid.max_speed
@@ -49,16 +51,16 @@ def simulate(boids, active_area, settings):
             boid.velocity.y = (boid.velocity.y / speed) * boid.min_speed
 
         margin_pos_x, margin_pos_y = active_area[0]
-        margin_width, margin_height = active_area[1]
+        arena_width, arena_height = active_area[1]
         # Turn around when outside active area
         if boid.position.y < margin_pos_y:
-            boid.velocity.y = boid.velocity.y + settings["turn factor"]
+            boid.velocity.y += settings["turn factor"]
         if boid.position.x < margin_pos_x:
-            boid.velocity.x = boid.velocity.x + settings["turn factor"]
-        if boid.position.y > margin_pos_y + margin_height:
-            boid.velocity.y = boid.velocity.y - settings["turn factor"]
-        if boid.position.x > margin_pos_x + margin_width:
-            boid.velocity.x = boid.velocity.x - settings["turn factor"]
+            boid.velocity.x += settings["turn factor"]
+        if boid.position.y > margin_pos_y + arena_height:
+            boid.velocity.y -= settings["turn factor"]
+        if boid.position.x > margin_pos_x + arena_width:
+            boid.velocity.x -= settings["turn factor"]
         
 
         boid.position += boid.velocity

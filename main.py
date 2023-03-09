@@ -20,10 +20,13 @@ settings = {
 }
 
 def get_random_direction():
-    flipped_x = random.choice([-1, 1])
-    x = random.random() * 2 * flipped_x
-    flipped_y = random.choice([-1, 1])
-    y = random.random() * 2 * flipped_y
+    x, y = 0, 0
+    while x == 0 and y == 0:
+        flipped_x = random.choice([-1, 1])
+        x = random.random() * 2 * flipped_x
+        flipped_y = random.choice([-1, 1])
+        y = random.random() * 2 * flipped_y
+    
     return Vector(x, y).normalize()
 
 def create_boids(width, height, num_of_boids=10):

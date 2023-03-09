@@ -13,20 +13,25 @@ class Canvas:
         self.show_circles = show_circles
     
     def draw_background(self, active_area):
-        """Draws the screen with the background color with an active area box."""
+        """Fills the screen with the background color and draws a square for the active area."""
 
         self.screen.fill(self.bg_color)
         pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(active_area[0], active_area[1]), 1)
     
     def draw_boids(self, boids, size):
-        """Draws boid polygons."""
+        """Draws the boid polygons."""
 
         for boid in boids:
-            perpendicular = Vector(boid.velocity.y, -boid.velocity.x).normalize()
+            if boid.velocity.length() == 0:
+                direction = Vector(0, 1)
+            else:
+                direction = boid.velocity.normalize()
+            
+            perpendicular = Vector(direction.y, -direction.x)
             perpendicular /= 2
-            point_1 = boid.position + boid.velocity.normalize() * size
-            point_2 = boid.position - boid.velocity.normalize() * size + perpendicular * size
-            point_3 = boid.position - boid.velocity.normalize() * size - perpendicular * size
+            point_1 = boid.position + direction * size
+            point_2 = boid.position - direction * size + perpendicular * size
+            point_3 = boid.position - direction * size - perpendicular * size
             boid_points = [point_1.values(),
                             point_2.values(),
                             point_3.values()]
