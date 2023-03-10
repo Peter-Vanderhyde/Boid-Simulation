@@ -1,0 +1,5 @@
+
+*.pyc
+__pycache__/canvas.cpython-310.pyc
+__pycache__/simulation.cpython-310.pyc
+__pycache__/vector.cpython-310.pyc
