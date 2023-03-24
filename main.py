@@ -7,17 +7,36 @@ from vector import Vector
 import simulation
 
 settings = {
-    "view distance": 50,
-    "separation distance": 15,
-    "minimum speed": 2,
-    "maximum speed": 6,
-    "centering factor": 0.0005,
+    "view distance": {
+        "value": 50,
+        "min": 0,
+        "max": 5000
+    },
+    "separation distance": {
+        "value": 15,
+        "min": 0,
+        "max": 500
+    },
+    "minimum speed": {
+        "value": 3,
+        "min": 0.1,
+        "max": 50
+    },
+    "maximum speed": {
+        "value": 6,
+        "min": 0.1,
+        "max": 50
+    },
+    "centering factor": {
+        "value": 0.0005,
+        "min": 0,
+        "max": 1.0
+    },
     "matching factor": 0.05,
     "avoid factor": 0.05,
     "turn factor": 0.2,
     "margin": 100,
-    "boid size": 8,
-    "show circles":False
+    "boid size": 8
 }
 
 def get_random_direction():
@@ -58,11 +77,10 @@ def main(width=1920, height=1080):
     FPS = 60
     clock = pygame.time.Clock() # Allows pygame to limit the fps
 
-    canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
+    canvas = Canvas(width, height, 150, (255, 255, 255), settings) # Handles functions for drawing, and events
     
     width, height = canvas.width, canvas.height
-    
-    boids = create_boids(width, height, num_of_boids=50)
+    boids = create_boids(width, height, num_of_boids=100)
 
     while True:
         canvas.get_events() # Keypress events

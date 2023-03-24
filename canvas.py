@@ -6,18 +6,19 @@ import gui
 class Canvas:
     """This class takes care of drawing the window, drawing the boids, and handling window events."""
 
-    def __init__(self, width, height, bg_color, settings):
+    def __init__(self, width, height, sidebar_width, bg_color, settings):
         self.screen = pygame.display.set_mode((width, height), pygame.FULLSCREEN) # Create window
         self.bg_color = bg_color
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
+        self.sidebar = gui.Sidebar(self.screen, sidebar_width)
         margin = settings["margin"]
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
-                    (self.width - margin * 2, self.height - margin * 2))
+                    (self.width - sidebar_width - margin * 2, self.height - margin * 2))
         self.settings = settings
-        self.sidebar = gui.Sidebar(self.screen, 50)
+        self.show_circles = False
     
     def draw(self, boids):
         self.draw_background()
@@ -50,7 +51,7 @@ class Canvas:
                             point_3.values()]
             pygame.draw.polygon(self.screen, boid.color, boid_points)
 
-            if self.settings["show circles"]:
+            if self.show_circles:
                 # Show view range circles around the boids
                 pygame.draw.circle(self.screen, (150, 255, 150), boid.position.values(), boid.view_distance, 1)
                 pygame.draw.circle(self.screen, (255, 150, 150), boid.position.values(), boid.separation_distance, 1)
@@ -67,4 +68,4 @@ class Canvas:
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_RETURN:
-                    self.settings["show circles"] = not self.settings["show circles"] # Show view circles around boids
+                    self.show_circles = not self.show_circles # Show view circles around boids
