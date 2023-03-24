@@ -16,7 +16,8 @@ settings = {
     "avoid factor": 0.05,
     "turn factor": 0.2,
     "margin": 100,
-    "boid size": 8
+    "boid size": 8,
+    "show circles":False
 }
 
 def get_random_direction():
@@ -56,25 +57,19 @@ def main(width=1920, height=1080):
 
     FPS = 60
     clock = pygame.time.Clock() # Allows pygame to limit the fps
-    
-    canvas = Canvas(width, height, bg_color=(255, 255, 255)) # Handles functions for drawing, and events
+
+    canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
     
     width, height = canvas.width, canvas.height
-    margin = settings["margin"]
-    # Create rectangle area the boids will try to stay within
-    # ((corner_x, corner_y), (width, height))
-    active_area = ((margin, margin),
-                   (width - margin * 2, height - margin * 2))
     
-    boids = create_boids(width, height, num_of_boids=100)
+    boids = create_boids(width, height, num_of_boids=50)
 
     while True:
         canvas.get_events() # Keypress events
         
-        simulation.simulate(boids, active_area, settings)
+        simulation.simulate(boids, canvas.active_area, settings)
         
-        canvas.draw_background(active_area)
-        canvas.draw_boids(boids, settings["boid size"])
+        canvas.draw(boids)
 
         pygame.display.update()
         clock.tick(FPS)
