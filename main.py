@@ -6,6 +6,7 @@ from boid import Boid
 from vector import Vector
 import simulation
 
+#TODO Instead of storing values in the boids themselves, always refer to the settings so they can be changed on the fly
 settings = {
     "view distance": {
         "value": 50,
@@ -30,13 +31,33 @@ settings = {
     "centering factor": {
         "value": 0.0005,
         "min": 0,
+        "max": 0.01
+    },
+    "matching factor": {
+        "value": 0.05,
+        "min": 0,
         "max": 1.0
     },
-    "matching factor": 0.05,
-    "avoid factor": 0.05,
-    "turn factor": 0.2,
-    "margin": 100,
-    "boid size": 8
+    "avoid factor": {
+        "value": 0.05,
+        "min": 0,
+        "max": 1.0
+    },
+    "turn factor": {
+        "value": 0.2,
+        "min": 0,
+        "max": 10
+    },
+    "margin": {
+        "value": 100,
+        "min": 0,
+        "max": None
+    },
+    "boid size": {
+        "value": 8,
+        "min": 0.01,
+        "max": 30
+    }
 }
 
 def get_random_direction():
@@ -56,15 +77,12 @@ def create_boids(width, height, num_of_boids=10):
     for i in range(num_of_boids):
         x, y = random.randint(0, width), random.randint(0, height)
         position = Vector(x, y)
-        speed_range = settings["maximum speed"] - settings["minimum speed"]
-        speed = settings["minimum speed"] + speed_range * random.random() # Randomize the speed
+        speed_range = settings["maximum speed"]["value"] - settings["minimum speed"]["value"]
+        speed = settings["minimum speed"]["value"] + speed_range * random.random() # Randomize the speed
         velocity = get_random_direction() * speed
         boid = Boid(position,
                     velocity,
-                    settings["minimum speed"],
-                    settings["maximum speed"],
-                    settings["view distance"],
-                    settings["separation distance"],
+                    settings,
                     color=(155, 0, 0))
         boids.append(boid)
     
@@ -77,6 +95,7 @@ def main(width=1920, height=1080):
     FPS = 60
     clock = pygame.time.Clock() # Allows pygame to limit the fps
 
+    settings["margin"]["max"] = min(width, height) / 2 - 1
     canvas = Canvas(width, height, 150, (255, 255, 255), settings) # Handles functions for drawing, and events
     
     width, height = canvas.width, canvas.height

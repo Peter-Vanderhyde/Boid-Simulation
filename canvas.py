@@ -12,7 +12,7 @@ class Canvas:
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
         self.sidebar = gui.Sidebar(self.screen, sidebar_width)
-        margin = settings["margin"]
+        margin = settings["margin"]["value"]
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
@@ -34,7 +34,7 @@ class Canvas:
     def draw_boids(self, boids):
         """Draws the boid polygons."""
 
-        size = self.settings["boid size"]
+        size = self.settings["boid size"]["value"]
         for boid in boids:
             if boid.velocity.length() == 0:
                 direction = Vector(0, 1)
@@ -53,8 +53,8 @@ class Canvas:
 
             if self.show_circles:
                 # Show view range circles around the boids
-                pygame.draw.circle(self.screen, (150, 255, 150), boid.position.values(), boid.view_distance, 1)
-                pygame.draw.circle(self.screen, (255, 150, 150), boid.position.values(), boid.separation_distance, 1)
+                pygame.draw.circle(self.screen, (150, 255, 150), boid.position.values(), self.settings["view distance"]["value"], 1)
+                pygame.draw.circle(self.screen, (255, 150, 150), boid.position.values(), self.settings["separation distance"]["value"], 1)
     
     def get_events(self):
         """Check every window event."""
