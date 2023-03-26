@@ -97,8 +97,10 @@ def main(width=1920, height=1080):
     clock = pygame.time.Clock() # Allows pygame to limit the fps
 
     settings["margin"]["max"] = min(width, height) / 2 - 1
-    canvas = Canvas(width, height, 250, (255, 255, 255), settings) # Handles functions for drawing, and events
-    canvas.sidebar.add_property("avoid factor")
+    canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
+    canvas.create_sidebar(width=250, prop_margin=10)
+    for key in settings.keys():
+        canvas.sidebar.add_property(key)
     
     width, height = canvas.width, canvas.height
     boids = create_boids(width, height, num_of_boids=100)
@@ -115,4 +117,4 @@ def main(width=1920, height=1080):
 
 
 if __name__ == "__main__":
-    main()
+    main(1280, 720)

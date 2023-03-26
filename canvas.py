@@ -6,24 +6,31 @@ import gui
 class Canvas:
     """This class takes care of drawing the window, drawing the boids, and handling window events."""
 
-    def __init__(self, width, height, sidebar_width, bg_color, settings):
-        self.screen = pygame.display.set_mode((width, height), pygame.FULLSCREEN) # Create window
+    def __init__(self, width, height, bg_color, settings):
+        self.screen = pygame.display.set_mode((width, height)) # Create window
         self.bg_color = bg_color
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
-        self.sidebar = gui.Sidebar(self.screen, sidebar_width, settings)
+        self.sidebar = None
         margin = settings["margin"]["value"]
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
-                    (self.width - sidebar_width - margin * 2, self.height - margin * 2))
+                    (self.width - margin * 2, self.height - margin * 2))
         self.settings = settings
         self.show_circles = False
+    
+    def create_sidebar(self, width, prop_margin):
+        self.sidebar = gui.Sidebar(self.screen, width, prop_margin, self.settings)
+        margin = self.active_area[0][0]
+        self.active_area = ((margin, margin),
+                    (self.width - width - margin * 2, self.height - margin * 2))
     
     def draw(self, boids):
         self.draw_background()
         self.draw_boids(boids)
-        self.sidebar.draw()
+        if self.sidebar:
+            self.sidebar.draw()
     
     def draw_background(self):
         """Fills the screen with the background color and draws a square for the active area."""
@@ -69,3 +76,6 @@ class Canvas:
                     sys.exit()
                 elif event.key == pygame.K_RETURN:
                     self.show_circles = not self.show_circles # Show view circles around boids
+            elif event.type == pygame.MOUSEWHEEL:
+                if self.sidebar.rect.collidepoint(pygame.mouse.get_pos()):
+                    self.sidebar.scroll(event.y * 10)
