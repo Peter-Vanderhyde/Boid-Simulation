@@ -11,7 +11,7 @@ class Canvas:
         self.bg_color = bg_color
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
-        self.sidebar = gui.Sidebar(self.screen, sidebar_width)
+        self.sidebar = gui.Sidebar(self.screen, sidebar_width, settings)
         margin = settings["margin"]["value"]
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))

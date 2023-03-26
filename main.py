@@ -5,6 +5,7 @@ from canvas import Canvas
 from boid import Boid
 from vector import Vector
 import simulation
+pygame.init()
 
 #TODO Instead of storing values in the boids themselves, always refer to the settings so they can be changed on the fly
 settings = {
@@ -96,7 +97,8 @@ def main(width=1920, height=1080):
     clock = pygame.time.Clock() # Allows pygame to limit the fps
 
     settings["margin"]["max"] = min(width, height) / 2 - 1
-    canvas = Canvas(width, height, 150, (255, 255, 255), settings) # Handles functions for drawing, and events
+    canvas = Canvas(width, height, 250, (255, 255, 255), settings) # Handles functions for drawing, and events
+    canvas.sidebar.add_property("avoid factor")
     
     width, height = canvas.width, canvas.height
     boids = create_boids(width, height, num_of_boids=100)
