@@ -2,18 +2,13 @@ import pygame
 import math
 from vector import Vector
 
-
-class Gui:
-    def __init__(self, rect):
-        self.rect = rect
     
-    def get_offset_rect(self, offset_amount):
-        return pygame.Rect(self.rect.left + offset_amount[0], self.rect.top + offset_amount[1],
-                           self.rect.width, self.rect.height)
+def get_offset_rect(rect, offset_amount):
+    return pygame.Rect(rect.left + offset_amount[0], rect.top + offset_amount[1],
+                        rect.width, rect.height)
 
-class Text(Gui):
+class Text:
     def __init__(self, text, font_name, size, color, top_left):
-        super().__init__(rect=None)
         self.text = text
         self.font_name = font_name
         self.size = size
@@ -21,6 +16,7 @@ class Text(Gui):
         self.font = pygame.font.SysFont(self.font_name, self.size, True)
         self.surf = None
         self.top_left = top_left
+        self.rect = None
         self.create_surf()
     
     def create_surf(self):
@@ -36,7 +32,7 @@ class Text(Gui):
         if offset == (0, 0):
             screen.blit(self.surf, self.rect)
         else:
-            screen.blit(self.surf, self.get_offset_rect(offset))
+            screen.blit(self.surf, get_offset_rect(self.rect, offset))
     
     def set_text(self, text):
         self.text = text
@@ -44,22 +40,22 @@ class Text(Gui):
             self.create_surf()
 
 
-class TextBox(Gui):
+class TextBox:
     def __init__(self, value, font_name, width, height, top_left):
-        super().__init__(rect=pygame.Rect(top_left.values(), (width, height)))
         self.value = value
         self.text = Text(str(value), font_name, height, (0, 0, 0), top_left)
         self.width = width
         self.height = height
         self.top_left = top_left
         self.selected = False
+        self.rect = pygame.Rect(top_left.values(), (width, height))
     
     def set_value(self, value):
         self.value = value
         self.text.set_text(str(value))
     
     def draw(self, screen, offset=(0, 0)):
-        rect = self.get_offset_rect(offset)
+        rect = get_offset_rect(self.rect, offset)
         pygame.draw.rect(screen, (255, 255, 255), rect, border_radius=5)
         if not self.selected:
             pygame.draw.rect(screen, (150, 150, 150), rect, 1, border_radius=5)
@@ -113,6 +109,8 @@ class Sidebar:
         self.bar_height = self.s_height
         self.scroll_speed = 1
         self.bar_rect = pygame.Rect(self.s_width - 10, 0, 10, self.bar_height)
+        self.last_scroll_pos = None
+        self.selected_textbox = None
     
     def calculate_scrollbar_props(self):
         full_height = self.rect.height
@@ -152,9 +150,11 @@ class Sidebar:
         pygame.draw.rect(self.screen, (100, 100, 100),
                          self.get_scrollbar_pos(), 1, border_radius=20)
     
-    def draw(self, curr_mouse_pos, last_mouse_pos):
-        if last_mouse_pos is not None:
-            self.scroll(last_mouse_pos[1] - curr_mouse_pos[1])
+    def draw(self):
+        if self.last_scroll_pos != None:
+            mouse_pos = pygame.mouse.get_pos()
+            self.scroll(self.last_scroll_pos[1] - mouse_pos[1])
+            self.last_scroll_pos = mouse_pos
         
         width, height = self.screen.get_size()
         pygame.draw.rect(self.screen, (200, 200, 200), (width - self.width, 0, self.width, height),
@@ -165,3 +165,27 @@ class Sidebar:
         
         self.draw_scrollbar()
         pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1, border_top_left_radius=15, border_bottom_left_radius=15)
+
+    def check_event(self, event):
+        if event.type == pygame.MOUSEWHEEL:
+            if self.rect.collidepoint(pygame.mouse.get_pos()):
+                self.scroll(event.y * 10)
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0]:
+                mouse_pos = pygame.mouse.get_pos()
+                if self.get_scrollbar_pos().collidepoint(mouse_pos):
+                    self.last_scroll_pos = mouse_pos
+                else:
+                    self.last_scroll_pos = None
+                
+                self.selected_textbox = None
+                for prop in self.properties:
+                    if get_offset_rect(prop.textbox.rect, (0, self.scroll_y)).collidepoint(mouse_pos):
+                        self.selected_textbox = prop
+                        prop.textbox.selected = True
+                    else:
+                        prop.textbox.selected = False
+        
+        elif event.type == pygame.MOUSEBUTTONUP:
+            self.last_scroll_pos = None

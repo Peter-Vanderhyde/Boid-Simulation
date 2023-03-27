@@ -21,8 +21,6 @@ class Canvas:
 
         self.settings = settings
         self.show_circles = False
-        self.last_scroll_pos = None
-        self.selected_textbox = None
     
     def create_sidebar(self, width, margins=(0, 0)):
         self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings)
@@ -34,10 +32,7 @@ class Canvas:
         self.draw_background()
         self.draw_boids(boids)
         if self.sidebar:
-            mouse_pos = pygame.mouse.get_pos()
-            self.sidebar.draw(mouse_pos, self.last_scroll_pos)
-            if self.last_scroll_pos != None:
-                self.last_scroll_pos = mouse_pos
+            self.sidebar.draw()
     
     def draw_background(self):
         """Fills the screen with the background color and draws a square for the active area."""
@@ -85,26 +80,4 @@ class Canvas:
                 elif event.key == pygame.K_RETURN:
                     self.show_circles = not self.show_circles # Show view circles around boids
             
-            elif event.type == pygame.MOUSEWHEEL:
-                if self.sidebar.rect.collidepoint(pygame.mouse.get_pos()):
-                    self.sidebar.scroll(event.y * 10)
-
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                if self.sidebar.get_scrollbar_pos().collidepoint(mouse_pos):
-                    self.last_scroll_pos = mouse_pos
-                else:
-                    self.last_scroll_pos = None
-                
-                self.selected_textbox = None
-                for prop in self.sidebar.properties:
-                    if prop.textbox.rect.collidepoint(mouse_pos):
-                        self.selected_textbox = prop
-                        prop.textbox.selected = True
-                
-                for prop in self.sidebar.properties:
-                    if prop is not self.selected_textbox:
-                        prop.textbox.selected = False
-            
-            elif event.type == pygame.MOUSEBUTTONUP:
-                self.last_scroll_pos = None
+            self.sidebar.check_event(event)
