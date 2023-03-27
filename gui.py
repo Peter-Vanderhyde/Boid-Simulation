@@ -3,44 +3,53 @@ import math
 from vector import Vector
 
     
-def get_offset_rect(rect, offset_amount):
-    return pygame.Rect(rect.left + offset_amount[0], rect.top + offset_amount[1],
+def get_offset_rect(rect, offset):
+    """This gives a rect that has been offset some amount.
+    It's useful for scrolling items up and down."""
+
+    return pygame.Rect(rect.left + offset.x, rect.top + offset.y,
                         rect.width, rect.height)
 
 class Text:
+    """A text GUI element that can be positioned on the screen to show any text."""
+
     def __init__(self, text, font_name, size, color, top_left):
         self.text = text
         self.font_name = font_name
         self.size = size
         self.color = color
-        self.font = pygame.font.SysFont(self.font_name, self.size, True)
+        self.font = pygame.font.SysFont(self.font_name, self.size, True) # The font_name is the string name of a built-in font
         self.surf = None
         self.top_left = top_left
         self.rect = None
-        self.create_surf()
+        self.create_surf() # Pre-renders the text so it can simply be placed on the screen each time
     
     def create_surf(self):
         self.surf = self.font.render(self.text, False, self.color)
         self.rect = self.surf.get_rect()
         self.rect.topleft = self.top_left.values()
     
-    def draw(self, screen, offset=(0, 0)):
+    def draw(self, screen, offset=Vector(0, 0)):
         if not self.text:
-            return
-            #raise RuntimeError("Text object has no text to display.")
+            return # Skips trying to display if there isn't any text to display
         
-        if offset == (0, 0):
+        if offset.values() == (0, 0):
             screen.blit(self.surf, self.rect)
         else:
             screen.blit(self.surf, get_offset_rect(self.rect, offset))
     
     def set_text(self, text):
+        """Changes the text value and then renders the text again."""
+
         self.text = text
         if self.text:
             self.create_surf()
 
 
 class TextBox:
+    """This creates an editable box where a user can select the box and type
+    whatever value they want."""
+
     def __init__(self, value, font_name, width, height, top_left):
         self.value = value
         self.text = Text(str(value), font_name, height, (0, 0, 0), top_left)
@@ -54,7 +63,12 @@ class TextBox:
         self.value = value
         self.text.set_text(str(value))
     
-    def draw(self, screen, offset=(0, 0)):
+    def check_typing_event(self, event):
+        """This will edit the value based on values typed."""
+
+        pass
+    
+    def draw(self, screen, offset=Vector(0, 0)):
         rect = get_offset_rect(self.rect, offset)
         pygame.draw.rect(screen, (255, 255, 255), rect, border_radius=5)
         if not self.selected:
@@ -62,7 +76,7 @@ class TextBox:
         else:
             pygame.draw.rect(screen, (50, 50, 50), rect, 1, border_radius=5)
         
-        self.text.draw(screen, (offset[0] + 3, offset[1]))
+        self.text.draw(screen, Vector(offset.x + 3, offset.y))
 
 
 class Property:
@@ -89,8 +103,8 @@ class Property:
         self.textbox = textbox
     
     def draw(self, screen, offset_y):
-        self.title.draw(screen, (0, offset_y))
-        self.textbox.draw(screen, (0, offset_y))
+        self.title.draw(screen, Vector(0, offset_y))
+        self.textbox.draw(screen, Vector(0, offset_y))
 
 
 class Sidebar:
@@ -110,7 +124,6 @@ class Sidebar:
         self.scroll_speed = 1
         self.bar_rect = pygame.Rect(self.s_width - 10, 0, 10, self.bar_height)
         self.last_scroll_pos = None
-        self.selected_textbox = None
     
     def calculate_scrollbar_props(self):
         full_height = self.rect.height
@@ -179,9 +192,8 @@ class Sidebar:
                 else:
                     self.last_scroll_pos = None
                 
-                self.selected_textbox = None
                 for prop in self.properties:
-                    if get_offset_rect(prop.textbox.rect, (0, self.scroll_y)).collidepoint(mouse_pos):
+                    if get_offset_rect(prop.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
                         self.selected_textbox = prop
                         prop.textbox.selected = True
                     else:
