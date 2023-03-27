@@ -7,7 +7,7 @@ from vector import Vector
 import simulation
 pygame.init()
 
-#TODO Instead of storing values in the boids themselves, always refer to the settings so they can be changed on the fly
+#TODO Have the sidebar check its own events
 settings = {
     "view distance": {
         "value": 50,
@@ -98,7 +98,7 @@ def main(width=1920, height=1080):
 
     settings["margin"]["max"] = min(width, height) / 2 - 1
     canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
-    canvas.create_sidebar(width=250, prop_margin=10)
+    canvas.create_sidebar(width=250, margins=(10, 10))
     for key in settings.keys():
         canvas.sidebar.add_property(key)
     

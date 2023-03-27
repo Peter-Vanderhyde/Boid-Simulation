@@ -12,16 +12,20 @@ class Canvas:
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
         self.sidebar = None
+
         margin = settings["margin"]["value"]
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
                     (self.width - margin * 2, self.height - margin * 2))
+
         self.settings = settings
         self.show_circles = False
+        self.last_scroll_pos = None
+        self.selected_textbox = None
     
-    def create_sidebar(self, width, prop_margin):
-        self.sidebar = gui.Sidebar(self.screen, width, prop_margin, self.settings)
+    def create_sidebar(self, width, margins=(0, 0)):
+        self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings)
         margin = self.active_area[0][0]
         self.active_area = ((margin, margin),
                     (self.width - width - margin * 2, self.height - margin * 2))
@@ -30,7 +34,10 @@ class Canvas:
         self.draw_background()
         self.draw_boids(boids)
         if self.sidebar:
-            self.sidebar.draw()
+            mouse_pos = pygame.mouse.get_pos()
+            self.sidebar.draw(mouse_pos, self.last_scroll_pos)
+            if self.last_scroll_pos != None:
+                self.last_scroll_pos = mouse_pos
     
     def draw_background(self):
         """Fills the screen with the background color and draws a square for the active area."""
@@ -70,12 +77,34 @@ class Canvas:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_RETURN:
                     self.show_circles = not self.show_circles # Show view circles around boids
+            
             elif event.type == pygame.MOUSEWHEEL:
                 if self.sidebar.rect.collidepoint(pygame.mouse.get_pos()):
                     self.sidebar.scroll(event.y * 10)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if self.sidebar.get_scrollbar_pos().collidepoint(mouse_pos):
+                    self.last_scroll_pos = mouse_pos
+                else:
+                    self.last_scroll_pos = None
+                
+                self.selected_textbox = None
+                for prop in self.sidebar.properties:
+                    if prop.textbox.rect.collidepoint(mouse_pos):
+                        self.selected_textbox = prop
+                        prop.textbox.selected = True
+                
+                for prop in self.sidebar.properties:
+                    if prop is not self.selected_textbox:
+                        prop.textbox.selected = False
+            
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.last_scroll_pos = None
