@@ -60,6 +60,7 @@ class TextBox:
         self.height = height
         self.top_left = top_left
         self.selected = False
+        self.highlighted = False
         self.rect = pygame.Rect(top_left.values(), (width, height))
     
     def set_value(self, value):
@@ -69,26 +70,52 @@ class TextBox:
         else:
             self.value = value
     
-    def get_value(self):
-        return float(self.value)
+    def apply_value(self, settings): 
+        self.value = self.value or "0"
+        value = float(self.value) or 0.0 # Default the value to 0 if there's no value
+        setting = settings[self.parent.name]
+        setting['value'] = min(setting['max'], max(setting['min'], value))
+        if setting['value'] == int(setting['value']):
+            self.set_value(str(int(setting['value'])))
+        else:
+            self.set_value(str(setting['value']))
     
     def check_typing_event(self, event):
         """This will edit the value based on values typed."""
 
         if event.key == K_BACKSPACE:
             if self.value:
-                self.set_value(self.value[:-1])
+                if self.highlighted:
+                    self.set_value("")
+                    self.highlighted = False
+                else:
+                    self.set_value(self.value[:-1])
         
-        elif event.dict["unicode"].isdigit() or (event.dict["unicode"] == '.' and '.' not in self.value):
-            self.set_value(self.value + event.dict["unicode"])
+        elif event.dict["unicode"].isdigit() or \
+                (event.dict["unicode"] == '.' and '.' not in self.value) or \
+                ((self.value == "" or self.highlighted) and event.dict['unicode'] == '-'):
+
+            if self.highlighted:
+                self.set_value(event.dict["unicode"])
+                self.highlighted = False
+            else:
+                self.set_value(self.value + event.dict["unicode"])
     
     def draw(self, screen, offset=Vector(0, 0)):
         rect = get_offset_rect(self.rect, offset)
-        pygame.draw.rect(screen, (255, 255, 255), rect, border_radius=5)
+        if self.selected:
+            pygame.draw.rect(screen, (255, 255, 255), rect, border_radius=5)
+        else:
+            pygame.draw.rect(screen, (225, 225, 225), rect, border_radius=5)
+        if self.highlighted:
+            text_rect = get_offset_rect(self.text.rect, offset)
+            text_rect.width += 5
+            pygame.draw.rect(screen, (50, 100, 212), text_rect, border_radius=5)
+        
         if not self.selected:
             pygame.draw.rect(screen, (150, 150, 150), rect, 1, border_radius=5)
         else:
-            pygame.draw.rect(screen, (50, 50, 50), rect, 1, border_radius=5)
+            pygame.draw.rect(screen, (0, 0, 0), rect, 1, border_radius=5)
         
         self.text.draw(screen, Vector(offset.x + 3, offset.y))
 
@@ -109,7 +136,7 @@ class Property:
         self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height
     
     def create_title(self, top_left):
-        title = Text(self, self.name, self.font_name, 15, (0, 0, 0), top_left)
+        title = Text(self, self.name.capitalize(), self.font_name, 15, (0, 0, 0), top_left)
         self.title = title
     
     def create_textbox(self, top_left):
@@ -185,7 +212,7 @@ class Sidebar:
             self.last_scroll_pos = mouse_pos
         
         width, height = self.screen.get_size()
-        pygame.draw.rect(self.screen, (200, 200, 200), (width - self.width, 0, self.width, height),
+        pygame.draw.rect(self.screen, (150, 150, 150), (width - self.width, 0, self.width, height),
                          border_top_left_radius=15, border_bottom_left_radius=15)
 
         for prop in self.properties:
@@ -211,13 +238,17 @@ class Sidebar:
                 for prop in self.properties:
                     if get_offset_rect(prop.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
                         self.selected_textbox = prop.textbox
-                        prop.textbox.selected = True
+                        if prop.textbox.selected:
+                             prop.textbox.highlighted = False
+                        else:
+                            prop.textbox.selected = True
+                            prop.textbox.highlighted = True
                     else:
                         if prop.textbox.selected:
-                            prop.textbox.set_value(prop.textbox.value or "0") # Default the value to 0 if there's no value
-                            self.settings[prop.textbox.parent.name]["value"] = prop.textbox.get_value()
+                            prop.textbox.apply_value(self.settings)
                         
                         prop.textbox.selected = False
+                        prop.textbox.highlighted = False
         
         elif event.type == MOUSEBUTTONUP:
             self.last_scroll_pos = None
@@ -225,9 +256,8 @@ class Sidebar:
         elif event.type == KEYDOWN:
             if event.key == K_RETURN:
                 if self.selected_textbox != None:
-                    self.settings[self.selected_textbox.parent.name]["value"] = self.selected_textbox.get_value()
-                    self.selected_textbox.selected = False
-                    self.selected_textbox = None
+                    self.selected_textbox.apply_value(self.settings)
+                    self.selected_textbox.highlighted = False
             
             if self.selected_textbox != None:
                 self.selected_textbox.check_typing_event(event)
