@@ -1,4 +1,5 @@
 import pygame
+from pygame.locals import *
 import math
 from vector import Vector
 
@@ -13,7 +14,8 @@ def get_offset_rect(rect, offset):
 class Text:
     """A text GUI element that can be positioned on the screen to show any text."""
 
-    def __init__(self, text, font_name, size, color, top_left):
+    def __init__(self, parent, text, font_name, size, color, top_left):
+        self.parent = parent
         self.text = text
         self.font_name = font_name
         self.size = size
@@ -50,9 +52,10 @@ class TextBox:
     """This creates an editable box where a user can select the box and type
     whatever value they want."""
 
-    def __init__(self, value, font_name, width, height, top_left):
+    def __init__(self, parent, value, font_name, width, height, top_left):
+        self.parent = parent
         self.value = value
-        self.text = Text(str(value), font_name, height, (0, 0, 0), top_left)
+        self.text = Text(self, str(value), font_name, height, (0, 0, 0), top_left)
         self.width = width
         self.height = height
         self.top_left = top_left
@@ -60,13 +63,24 @@ class TextBox:
         self.rect = pygame.Rect(top_left.values(), (width, height))
     
     def set_value(self, value):
-        self.value = value
-        self.text.set_text(str(value))
+        self.text.set_text(value)
+        if self.text.rect.width > self.rect.width:
+            self.text.set_text(self.value)
+        else:
+            self.value = value
+    
+    def get_value(self):
+        return float(self.value)
     
     def check_typing_event(self, event):
         """This will edit the value based on values typed."""
 
-        pass
+        if event.key == K_BACKSPACE:
+            if self.value:
+                self.set_value(self.value[:-1])
+        
+        elif event.dict["unicode"].isdigit() or (event.dict["unicode"] == '.' and '.' not in self.value):
+            self.set_value(self.value + event.dict["unicode"])
     
     def draw(self, screen, offset=Vector(0, 0)):
         rect = get_offset_rect(self.rect, offset)
@@ -95,11 +109,11 @@ class Property:
         self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height
     
     def create_title(self, top_left):
-        title = Text(self.name, self.font_name, 15, (0, 0, 0), top_left)
+        title = Text(self, self.name, self.font_name, 15, (0, 0, 0), top_left)
         self.title = title
     
     def create_textbox(self, top_left):
-        textbox = TextBox(self.value, self.font_name, 150, 15, top_left)
+        textbox = TextBox(self, str(self.value), self.font_name, 150, 15, top_left)
         self.textbox = textbox
     
     def draw(self, screen, offset_y):
@@ -124,6 +138,7 @@ class Sidebar:
         self.scroll_speed = 1
         self.bar_rect = pygame.Rect(self.s_width - 10, 0, 10, self.bar_height)
         self.last_scroll_pos = None
+        self.selected_textbox = None
     
     def calculate_scrollbar_props(self):
         full_height = self.rect.height
@@ -180,11 +195,11 @@ class Sidebar:
         pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1, border_top_left_radius=15, border_bottom_left_radius=15)
 
     def check_event(self, event):
-        if event.type == pygame.MOUSEWHEEL:
+        if event.type == MOUSEWHEEL:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
                 self.scroll(event.y * 10)
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == MOUSEBUTTONDOWN:
             if pygame.mouse.get_pressed()[0]:
                 mouse_pos = pygame.mouse.get_pos()
                 if self.get_scrollbar_pos().collidepoint(mouse_pos):
@@ -192,12 +207,27 @@ class Sidebar:
                 else:
                     self.last_scroll_pos = None
                 
+                self.selected_textbox = None
                 for prop in self.properties:
                     if get_offset_rect(prop.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
-                        self.selected_textbox = prop
+                        self.selected_textbox = prop.textbox
                         prop.textbox.selected = True
                     else:
+                        if prop.textbox.selected:
+                            prop.textbox.set_value(prop.textbox.value or "0") # Default the value to 0 if there's no value
+                            self.settings[prop.textbox.parent.name]["value"] = prop.textbox.get_value()
+                        
                         prop.textbox.selected = False
         
-        elif event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == MOUSEBUTTONUP:
             self.last_scroll_pos = None
+        
+        elif event.type == KEYDOWN:
+            if event.key == K_RETURN:
+                if self.selected_textbox != None:
+                    self.settings[self.selected_textbox.parent.name]["value"] = self.selected_textbox.get_value()
+                    self.selected_textbox.selected = False
+                    self.selected_textbox = None
+            
+            if self.selected_textbox != None:
+                self.selected_textbox.check_typing_event(event)

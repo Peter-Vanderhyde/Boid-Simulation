@@ -77,7 +77,7 @@ class Canvas:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-                elif event.key == pygame.K_RETURN:
+                elif event.key == pygame.K_TAB:
                     self.show_circles = not self.show_circles # Show view circles around boids
             
             self.sidebar.check_event(event)
