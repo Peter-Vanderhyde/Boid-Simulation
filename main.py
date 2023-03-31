@@ -61,6 +61,8 @@ settings = {
     }
 }
 
+default_settings = settings.copy()
+
 def get_random_direction():
     x, y = 0, 0
     while x == 0 and y == 0:

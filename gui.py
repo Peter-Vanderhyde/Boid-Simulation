@@ -79,6 +79,8 @@ class TextBox:
             self.set_value(str(int(setting['value'])))
         else:
             self.set_value(str(setting['value']))
+        
+        self.parent.slider.set_value(setting['value'])
     
     def check_typing_event(self, event):
         """This will edit the value based on values typed."""
@@ -120,6 +122,45 @@ class TextBox:
         self.text.draw(screen, Vector(offset.x + 3, offset.y))
 
 
+class Slider:
+    def __init__(self, parent, value, min_val, max_val, width, height, top_left):
+        self.parent = parent
+        self.value = value
+        self.min_val = min_val
+        self.max_val = max_val
+        self.width = width
+        self.height = height
+        self.top_left = top_left
+        self.rect = Rect(top_left.x, top_left.y, width, height)
+        self.ratio = self.get_ratio()
+    
+    def get_ratio(self):
+        val_range = self.max_val - self.min_val
+        ratio = self.width / val_range
+        return ratio
+    
+    def set_value(self, value):
+        value = min(self.max_val, max(self.min_val, value))
+        self.value = value
+    
+    def apply_value(self, settings):
+        setting = settings[self.parent.name]
+        setting['value'] = round(self.value, 3)
+        self.parent.textbox.set_value(str(setting['value']))
+    
+    def update_pos(self, pos):
+        x_pos = max(self.rect.left, min(self.rect.right, pos[0]))
+        x_length = x_pos - self.rect.left
+        value = x_length / self.ratio
+        self.set_value(value)
+    
+    def draw(self, screen, offset=Vector(0, 0)):
+        rect = get_offset_rect(self.rect, offset)
+        pygame.draw.line(screen, (0, 0, 0), rect.midleft, rect.midright)
+        x_pos = rect.left + (self.value - self.min_val) * self.ratio
+        pygame.draw.rect(screen, (225, 225, 225), (x_pos - 5, rect.top, 10, self.height))
+
+
 class Property:
     def __init__(self, name, font_name, value, min_value, max_value, top_left):
         self.name = name
@@ -130,10 +171,12 @@ class Property:
         self.top_left = top_left
         self.title = None
         self.textbox = None
+        self.slider = None
         self.create_title(top_left)
-        self.create_textbox(top_left + Vector(0, self.title.rect.height))
+        self.create_textbox(top_left + Vector(0, self.title.rect.height + 2))
+        self.create_slider(top_left + Vector(0, self.title.rect.height + self.textbox.rect.height + 4))
         prop_y_margins = 15
-        self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height
+        self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
     def create_title(self, top_left):
         title = Text(self, self.name.capitalize(), self.font_name, 15, (0, 0, 0), top_left)
@@ -143,9 +186,14 @@ class Property:
         textbox = TextBox(self, str(self.value), self.font_name, 150, 15, top_left)
         self.textbox = textbox
     
+    def create_slider(self, top_left):
+        slider = Slider(self, self.value, self.min_value, self.max_value, 150, 20, top_left)
+        self.slider = slider
+    
     def draw(self, screen, offset_y):
         self.title.draw(screen, Vector(0, offset_y))
         self.textbox.draw(screen, Vector(0, offset_y))
+        self.slider.draw(screen, Vector(0, offset_y))
 
 
 class Sidebar:
@@ -166,6 +214,8 @@ class Sidebar:
         self.bar_rect = pygame.Rect(self.s_width - 10, 0, 10, self.bar_height)
         self.last_scroll_pos = None
         self.selected_textbox = None
+        self.selected_slider = None
+        self.last_slider_pos = None
     
     def calculate_scrollbar_props(self):
         full_height = self.rect.height
@@ -235,6 +285,7 @@ class Sidebar:
                     self.last_scroll_pos = None
                 
                 self.selected_textbox = None
+                self.selected_slider = None
                 for prop in self.properties:
                     if get_offset_rect(prop.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
                         self.selected_textbox = prop.textbox
@@ -243,6 +294,11 @@ class Sidebar:
                         else:
                             prop.textbox.selected = True
                             prop.textbox.highlighted = True
+                    elif get_offset_rect(prop.slider.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                        prop.textbox.selected = False
+                        prop.textbox.highlighted = False
+                        self.selected_slider = prop.slider
+                        self.last_slider_pos = mouse_pos
                     else:
                         if prop.textbox.selected:
                             prop.textbox.apply_value(self.settings)
@@ -252,12 +308,21 @@ class Sidebar:
         
         elif event.type == MOUSEBUTTONUP:
             self.last_scroll_pos = None
+            self.selected_slider = None
+
+        elif event.type == MOUSEMOTION:
+            if self.selected_slider:
+                self.selected_slider.update_pos(pygame.mouse.get_pos())
+                self.selected_slider.apply_value(self.settings)
         
         elif event.type == KEYDOWN:
-            if event.key == K_RETURN:
-                if self.selected_textbox != None:
+            if self.selected_textbox != None:
+                if event.key == K_RETURN:
                     self.selected_textbox.apply_value(self.settings)
                     self.selected_textbox.highlighted = False
-            
-            if self.selected_textbox != None:
-                self.selected_textbox.check_typing_event(event)
+                    self.selected_textbox.selected = False
+                    self.selected_textbox = None
+                elif event.key == K_RIGHT:
+                    self.selected_textbox.highlighted = False
+                else:
+                    self.selected_textbox.check_typing_event(event)
