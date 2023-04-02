@@ -12,12 +12,12 @@ settings = {
     "view distance": {
         "value": 50,
         "min": 0,
-        "max": 5000
+        "max": 500
     },
     "separation distance": {
         "value": 15,
         "min": 0,
-        "max": 500
+        "max": 250
     },
     "minimum speed": {
         "value": 3,
