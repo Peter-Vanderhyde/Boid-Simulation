@@ -13,13 +13,15 @@ def get_offset_rect(rect, offset):
 
 
 class Sidebar:
+    """This is the entire bar on the side that contains all of the gui elements."""
+
     def __init__(self, screen, width, margins, settings):
         self.screen = screen
         self.s_width = screen.get_width()
         self.s_height = screen.get_height()
         self.width = width
         self.rect = pygame.Rect(self.s_width - width, 0, width, self.s_height)
-        self.margins = margins
+        self.margins = margins # TODO I need to make this responsive
         self.settings = settings
         self.font_name = "calibri"
         self.properties = []
@@ -34,9 +36,11 @@ class Sidebar:
         self.last_slider_pos = None
     
     def calculate_scrollbar_props(self):
+        """Calculates the height of the bar and how fast the sidebar scrolls as you move it."""
+
         full_height = self.rect.height
         scroll_percent = -self.max_scroll / full_height
-        if scroll_percent > 0.99:
+        if scroll_percent > 0.99: # Needs to scroll too far, so change the scroll speed, not the size
             self.bar_height = 30
             self.scroll_speed = (full_height - self.bar_height) / -self.max_scroll 
         else:
@@ -47,8 +51,11 @@ class Sidebar:
         return pygame.Rect(self.rect.right - 10, self.rect.top + -self.scroll_y * self.scroll_speed, 10, self.bar_height)
     
     def add_property(self, property_name):
+        """Add a Property segment to the sidebar."""
+
         value, min_value, max_value = self.settings[property_name].values()
 
+        # Find the y position to place the property
         bot_of_last_prop = self.margins[1]
         for prop in self.properties:
             bot_of_last_prop += prop.height
@@ -60,6 +67,8 @@ class Sidebar:
         self.calculate_scrollbar_props()
     
     def scroll(self, amount):
+        """Called when scrolling the mouse."""
+        
         self.scroll_y += amount
         self.scroll_y = max(self.max_scroll, min(0, self.scroll_y))
     
@@ -72,67 +81,79 @@ class Sidebar:
                          self.get_scrollbar_pos(), 1, border_radius=20)
     
     def draw(self):
-        if self.last_scroll_pos != None:
+        """Draws the sidebar and all its property elements on the right."""
+
+        if self.last_scroll_pos != None: # Scrollbar is currently being dragged
             mouse_pos = pygame.mouse.get_pos()
             self.scroll(self.last_scroll_pos[1] - mouse_pos[1])
             self.last_scroll_pos = mouse_pos
         
+        # Scrollbar background
         width, height = self.screen.get_size()
         pygame.draw.rect(self.screen, (150, 150, 150), (width - self.width, 0, self.width, height),
                          border_top_left_radius=15, border_bottom_left_radius=15)
 
+        # Draw properties
         for prop in self.properties:
             prop.draw(self.screen, self.scroll_y)
         
         self.draw_scrollbar()
+        # Outline
         pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1, border_top_left_radius=15, border_bottom_left_radius=15)
 
     def check_event(self, event):
+        """Handle any mouse events that occured within the sidebar."""
+
         if event.type == MOUSEWHEEL:
-            if self.rect.collidepoint(pygame.mouse.get_pos()):
+            if self.rect.collidepoint(pygame.mouse.get_pos()): # Overlaps sidebar
                 self.scroll(event.y * 10)
 
         elif event.type == MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
+            if pygame.mouse.get_pressed()[0]: # Left button pressed
                 mouse_pos = pygame.mouse.get_pos()
-                if self.get_scrollbar_pos().collidepoint(mouse_pos):
+                if self.get_scrollbar_pos().collidepoint(mouse_pos): # Clicked the scrollbar
                     self.last_scroll_pos = mouse_pos
                 else:
-                    self.last_scroll_pos = None
+                    self.last_scroll_pos = None # De-select scrollbar
                 
                 self.selected_textbox = None
                 self.selected_slider = None
                 for prop in self.properties:
                     if get_offset_rect(prop.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
-                        self.selected_textbox = prop.textbox
+                        self.selected_textbox = prop.textbox # Selected a textbox
                         if prop.textbox.selected:
+                             # Second time clicking the textbox, so remove highlight of text
                              prop.textbox.highlighted = False
                         else:
+                            # First click, so select and highlight
                             prop.textbox.selected = True
                             prop.textbox.highlighted = True
                     elif get_offset_rect(prop.slider.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
                         prop.textbox.selected = False
                         prop.textbox.highlighted = False
-                        self.selected_slider = prop.slider
+                        self.selected_slider = prop.slider # Selected a slider
                         self.last_slider_pos = mouse_pos
                     else:
                         if prop.textbox.selected:
+                            # User clicked outside textbox, so apply the input value
                             prop.textbox.apply_value(self.settings)
                         
                         prop.textbox.selected = False
                         prop.textbox.highlighted = False
         
         elif event.type == MOUSEBUTTONUP:
+            # Release the slider
             self.last_scroll_pos = None
             self.selected_slider = None
 
         elif event.type == MOUSEMOTION:
             if self.selected_slider:
                 self.selected_slider.update_pos(pygame.mouse.get_pos())
-                self.selected_slider.apply_value(self.settings)
+                self.selected_slider.apply_value(self.settings) # Apply settings in real time
         
         elif event.type == KEYDOWN:
             if self.selected_textbox != None:
+                # Textbox selected, so check for user inputing values
                 if event.key == K_RETURN:
                     self.selected_textbox.apply_value(self.settings)
                     self.selected_textbox.highlighted = False
@@ -145,6 +166,8 @@ class Sidebar:
 
 
 class Property:
+    """A sidebar element consisting of a title, textbox, and slider."""
+
     def __init__(self, name, font_name, value, min_value, max_value, top_left):
         self.name = name
         self.font_name = font_name
@@ -158,7 +181,7 @@ class Property:
         self.create_title(top_left)
         self.create_textbox(top_left + Vector(0, self.title.rect.height + 2))
         self.create_slider(top_left + Vector(0, self.title.rect.height + self.textbox.rect.height + 4))
-        prop_y_margins = 15
+        prop_y_margins = 15 # Spacing between each property
         self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
     def create_title(self, top_left):
@@ -181,7 +204,7 @@ class Property:
 
 class TextBox:
     """This creates an editable box where a user can select the box and type
-    whatever value they want."""
+    whatever number value they want."""
 
     def __init__(self, parent, value, font_name, width, height, top_left):
         self.parent = parent
