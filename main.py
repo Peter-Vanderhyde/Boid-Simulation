@@ -7,7 +7,7 @@ from vector import Vector
 import simulation
 pygame.init()
 
-#TODO Have the sidebar check its own events
+
 settings = {
     "view distance": {
         "value": 50,
