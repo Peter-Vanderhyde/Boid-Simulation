@@ -3,7 +3,7 @@ import pygame
 from pygame.locals import *
 from canvas import Canvas
 from boid import Boid
-from vector import Vector
+from pygame.math import Vector2 as Vector
 import simulation
 pygame.init()
 

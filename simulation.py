@@ -1,4 +1,4 @@
-from vector import Vector
+from pygame.math import Vector2 as Vector
 
 
 def get_necessary_settings(settings):

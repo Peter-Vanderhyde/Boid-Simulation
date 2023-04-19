@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 import math
-from vector import Vector
+from pygame.math import Vector2 as Vector
 
     
 def get_offset_rect(rect, offset):
@@ -215,7 +215,7 @@ class TextBox:
         self.top_left = top_left
         self.selected = False
         self.highlighted = False
-        self.rect = pygame.Rect(top_left.values(), (width, height))
+        self.rect = pygame.Rect(list(top_left), (width, height))
     
     def set_value(self, value):
         """Changes the text value, then makes sure it can fit all characters in the textbox."""
@@ -372,7 +372,7 @@ class Text:
 
         self.surf = self.font.render(self.text, False, self.color)
         self.rect = self.surf.get_rect()
-        self.rect.topleft = self.top_left.values()
+        self.rect.topleft = list(self.top_left)
     
     def draw(self, screen, offset=Vector(0, 0)):
         """Blits the rendered text to the screen at the position of rect."""
@@ -380,7 +380,7 @@ class Text:
         if not self.text:
             return # Skips trying to display if there isn't any text to display
         
-        if offset.values() == (0, 0):
+        if list(offset) == (0, 0):
             screen.blit(self.surf, self.rect)
         else:
             screen.blit(self.surf, get_offset_rect(self.rect, offset))

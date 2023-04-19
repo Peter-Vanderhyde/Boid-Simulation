@@ -1,6 +1,6 @@
 import pygame
 import sys
-from vector import Vector
+from pygame.math import Vector2 as Vector
 import gui
 
 class Canvas:
@@ -55,15 +55,15 @@ class Canvas:
             point_1 = boid.position + direction * size
             point_2 = boid.position - direction * size + perpendicular * size
             point_3 = boid.position - direction * size - perpendicular * size
-            boid_points = [point_1.values(),
-                            point_2.values(),
-                            point_3.values()]
+            boid_points = [list(point_1),
+                            list(point_2),
+                            list(point_3)]
             pygame.draw.polygon(self.screen, boid.color, boid_points)
 
             if self.show_circles:
                 # Show view range circles around the boids
-                pygame.draw.circle(self.screen, (150, 255, 150), boid.position.values(), self.settings["view distance"]["value"], 1)
-                pygame.draw.circle(self.screen, (255, 150, 150), boid.position.values(), self.settings["separation distance"]["value"], 1)
+                pygame.draw.circle(self.screen, (150, 255, 150), list(boid.position), self.settings["view distance"]["value"], 1)
+                pygame.draw.circle(self.screen, (255, 150, 150), list(boid.position), self.settings["separation distance"]["value"], 1)
     
     def get_events(self):
         """Check every window event."""
