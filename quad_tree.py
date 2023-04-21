@@ -1,5 +1,6 @@
 from pygame.math import Vector2 as Vector
 from pygame.locals import Rect
+import pygame
 from boid import Boid
 
 
@@ -251,7 +252,25 @@ class QuadTree:
                     self.insert_node(n)
                     return False
                 else:
+                    if self.node_count < self.min_nodes:
+                        self.reabsorb()
                     return n
+    
+    def update(self, minimum, maximum):
+        self.min_nodes = minimum
+        self.max_nodes = maximum
+        if self.leaf:
+            return
+        for child in self.children.values():
+            if child:
+                child.update(minimum, maximum)
+    
+    def draw_grid(self, screen):
+        pygame.draw.rect(screen, (150, 150, 150), (self.rect.left, self.rect.top, self.rect.width + 1, self.rect.height + 1), 1)
+        if not self.leaf:
+            for child in self.children.values():
+                if child:
+                    child.draw_grid(screen)
 
     def draw(self, screen):
         if self.leaf:

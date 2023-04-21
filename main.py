@@ -14,7 +14,7 @@ settings = {
     "boids": {
     "value": 100,
     "min": 1,
-    "max": 1000
+    "max": 5000
     },
     "view distance": {
         "value": 50,
@@ -65,6 +65,16 @@ settings = {
         "value": 8,
         "min": 0.01,
         "max": 30
+    },
+    "min per node": {
+        "value": 15,
+        "min": 1,
+        "max": 50
+    },
+    "max per node": {
+        "value": 15,
+        "min": 1,
+        "max": 50
     }
 }
 
@@ -99,6 +109,13 @@ def create_boids(width, height, tree, num_of_boids=10):
     
     return boids
 
+def delete_boids(boids, tree, amount):
+    amount = min(amount, len(boids))
+    for i in range(amount):
+        boid = random.choice(boids)
+        tree.remove_boid(boid)
+        boids.remove(boid)
+
 
 def main(width=1920, height=1080):
     """Initializes the canvas and boid, then runs the main loop."""
@@ -115,15 +132,39 @@ def main(width=1920, height=1080):
     
     width, height = canvas.width, canvas.height
     tree = quad_tree.create_tree(5000, 5000, Vector(width // 2, height // 2), 25, 15)
-    boids = create_boids(width, height, tree=tree, num_of_boids=500)
+    canvas.tree = tree
+    boids = create_boids(width, height, tree=tree, num_of_boids=settings["boids"]["value"])
 
     while True:
         dt = time.time() - last_frame
         last_frame = time.time()
         canvas.get_events() # Keypress events
+
+        minimum = settings["min per node"]["value"]
+        maximum = settings["max per node"]["value"]
+        if int(minimum) != tree.min_nodes or int(maximum) != tree.max_nodes:
+            tree.update(int(minimum), int(maximum))
+
+        """ New Simulation Method """
+        boid_setting = int(settings["boids"]["value"])
+        if boid_setting != len(boids):
+            if len(boids) < boid_setting:
+                boids += create_boids(width, height, tree=tree, num_of_boids=boid_setting - len(boids))
+            else:
+                delete_boids(boids, tree, len(boids) - boid_setting)
         
         simulation.simulate(boids, canvas.active_area, settings, tree, dt)
-        # simulation.old_simulate(boids, canvas.active_area, settings)
+
+        """ Old Simulation Method """
+        # boid_setting = int(settings["boids"]["value"])
+        # if boid_setting != len(boids):
+        #     if len(boids) < boid_setting:
+        #         boids += create_boids(width, height, tree=tree, num_of_boids=boid_setting - len(boids))
+        #     else:
+        #         while len(boids) > boid_setting:
+        #             boids.remove(random.choice(boids))
+        
+        # simulation.old_simulate(boids, canvas.active_area, settings, dt)
         
         canvas.draw(boids)
 

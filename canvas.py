@@ -20,7 +20,9 @@ class Canvas:
                     (self.width - margin * 2, self.height - margin * 2))
 
         self.settings = settings
+        self.tree = None
         self.show_circles = False
+        self.show_grid = False
     
     def create_sidebar(self, width, margins=(0, 0)):
         self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings)
@@ -38,7 +40,11 @@ class Canvas:
         """Fills the screen with the background color and draws a square for the active area."""
 
         self.screen.fill(self.bg_color)
-        pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(self.active_area[0], self.active_area[1]), 1)
+        if self.show_grid:
+            self.tree.draw_grid(self.screen)
+            pygame.draw.rect(self.screen, (200, 0, 0), pygame.Rect(self.active_area[0], self.active_area[1]), 1)
+        else:
+            pygame.draw.rect(self.screen, (0, 0, 0), pygame.Rect(self.active_area[0], self.active_area[1]), 1)
     
     def draw_boids(self, boids):
         """Draws the boid polygons."""
@@ -79,5 +85,7 @@ class Canvas:
                     sys.exit()
                 elif event.key == pygame.K_TAB:
                     self.show_circles = not self.show_circles # Show view circles around boids
+                elif event.key == pygame.K_g:
+                    self.show_grid = not self.show_grid
             
             self.sidebar.check_event(event)

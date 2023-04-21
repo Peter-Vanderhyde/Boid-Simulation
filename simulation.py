@@ -83,7 +83,7 @@ def simulate(boids, active_area, settings, tree, dt):
         tree.adjust_boid_position(boid, dt)
 
 
-def old_simulate(boids, active_area, settings):
+def old_simulate(boids, active_area, settings, dt):
     """Simulates the movement of the boids based on the settings."""
 
     for boid in boids:
@@ -147,4 +147,4 @@ def old_simulate(boids, active_area, settings):
             boid.velocity.x -= turn_factor
         
 
-        boid.position += boid.velocity
+        boid.position += boid.velocity * dt * 60
