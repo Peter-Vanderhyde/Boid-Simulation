@@ -1,4 +1,5 @@
 from pygame.math import Vector2 as Vector
+from pygame.locals import Rect
 from boid import Boid
 
 class Node:
@@ -9,13 +10,17 @@ class Node:
 
 
 class QuadTree:
-    def __init__(self, top_left, bottom_right, node=None, parent=None):
-        self.node = node
+    def __init__(self, top_left, bottom_right, nodes=[], parent=None, max_nodes=25, min_nodes=15):
+        self.nodes = nodes
         self.parent = parent
+        self.max_nodes = max_nodes
+        self.min_nodes = min_nodes
+        self.node_count = len(nodes)
         self.leaf = True
         self.tl_corner = top_left
         self.br_corner = bottom_right
         self.center = Vector((self.tl_corner.x + self.br_corner.x) // 2, (self.tl_corner.y + self.br_corner.y) // 2)
+        self.rect = Rect(top_left, bottom_right - top_left + Vector(1, 1))
         self.clear_children()
     
     def clear_children(self):
@@ -27,12 +32,10 @@ class QuadTree:
         }
     
     def remove_boid(self, boid):
-        self.remove(Node(boid))
+        self.remove_node(Node(boid))
     
-    def is_leaf(self):
-        """Returns boolean of whether this node is a leaf or not."""
-
-        return self.leaf
+    def insert_boid(self, boid):
+        self.insert_node(Node(boid))
     
     def get_child(self, string):
         """Returns the tree object of the given child string."""
@@ -50,17 +53,6 @@ class QuadTree:
         else:
             raise TypeError("Attempted to set child as non quadtree type.")
     
-    def get_all_leaves(self):
-        if self.is_leaf():
-            return [self.node]
-
-        nodes = []
-        for child in self.children.values():
-            if child:
-                nodes += child.get_all_leaves()
-        
-        return nodes
-    
     def find_child_for_node(self, n):
         """Returns the string of which child quad the node is inside."""
 
@@ -76,104 +68,124 @@ class QuadTree:
             else:
                 return "br"
     
-    def create_child(self, child_string, node=None, parent=None):
+    def create_child(self, child_string, node, parent=None):
         """Creates a new tree object based on the given child string to quadrant off the correct area."""
 
         if child_string == "tl":
-            self.set_child("tl", QuadTree(Vector(self.tl_corner),
-                                            Vector(self.center),
-                                            node,
-                                            parent))
+            new_child = QuadTree(self.tl_corner,
+                                 self.center,
+                                 nodes=[node],
+                                 parent=parent,
+                                 max_nodes=self.max_nodes,
+                                 min_nodes=self.min_nodes)
+            self.set_child("tl", new_child)
+            return new_child
         elif child_string == "bl":
-            self.set_child("bl", QuadTree(Vector(self.tl_corner.x, self.center.y),
-                                            Vector(self.center.x, self.br_corner.y),
-                                            node,
-                                            parent))
+            new_child = QuadTree(Vector(self.tl_corner.x, self.center.y + 1),
+                                Vector(self.center.x, self.br_corner.y),
+                                nodes=[node],
+                                parent=parent,
+                                max_nodes=self.max_nodes,
+                                min_nodes=self.min_nodes)
+            self.set_child("bl", new_child)
+            return new_child
         elif child_string == "tr":
-            self.set_child("tr", QuadTree(Vector(self.center.x, self.tl_corner.y),
-                                            Vector(self.br_corner.x, self.center.y),
-                                            node,
-                                            parent))
+            new_child = QuadTree(Vector(self.center.x + 1, self.tl_corner.y),
+                                Vector(self.br_corner.x, self.center.y),
+                                nodes=[node],
+                                parent=parent,
+                                max_nodes=self.max_nodes,
+                                min_nodes=self.min_nodes)
+            self.set_child("tr", new_child)
+            return new_child
         elif child_string == "br":
-            self.set_child("br", QuadTree(Vector(self.center),
-                                            Vector(self.br_corner),
-                                            node,
-                                            parent))
+            new_child = QuadTree(self.center + Vector(1, 1),
+                                self.br_corner,
+                                nodes=[node],
+                                parent=parent,
+                                max_nodes=self.max_nodes,
+                                min_nodes=self.min_nodes)
+            self.set_child("br", new_child)
+            return new_child
         else:
             raise RuntimeError("Received invalid child string.")
-
-    def remove(self, n):
-        """Remove a node from the tree and, if necessary, remove leaves until it reaches
-        a branch to remove unecessary branches."""
-
-        if self.is_leaf():
-            if self.node.boid is n.boid: # Make sure this leaf node is the correct one
-                self.node = None
-                return True # Removed the node
+    
+    def divide(self):
+        for node in self.nodes:
+            child_string = self.find_child_for_node(node)
+            child = self.get_child(child_string)
+            if child is None:
+                self.create_child(child_string, node, self)
             else:
-                raise RuntimeError("Boid no longer exists.")
+                child.insert_node(node)
         
+        self.nodes = []
+        self.leaf = False
+    
+    def insert_node(self, n):
+        if self.leaf:
+            self.nodes.append(n)
+            self.node_count += 1
+            if len(self.nodes) > self.max_nodes and\
+                    abs(self.tl_corner.x - self.br_corner.x) >= 4 and\
+                    abs(self.tl_corner.y - self.br_corner.y) >= 4: # There's room for more subtrees:
+                # The node has too many objects, so it will subdivide
+                self.divide()
         else:
-            child_string = self.find_child_for_node(n) # Find which child the node is in
-            # Find how many children are in the current node
-            total_children = sum([int(c is not None) for c in self.children.values()])
-
-            removed_from_child = self.get_child(child_string).remove(n)
-            if removed_from_child and total_children > 1:
-                # The node was successfully found and removed, but
-                # don't delete this node because there are other children connected
-                self.set_child(child_string, None)
-                total_children -= 1
-            elif removed_from_child:
-                for child in self.children.values():
-                    if child and not child.leaf:
-                        print(self.children.values())
-            
-            if total_children == 1: # This was a node of two, now one, so it can be simplified
-                for child_string, child in self.children.items():
-                    if child and child.is_leaf():
-                        # There is one child and it's a leaf, so it can be simplified
-                        # If it weren't a leaf, there are multiple leaves connected further down
-                        self.node = child.node # Set the current node to the child's node
-                        self.leaf = True
-                        self.clear_children()
-                        return False
-            
-            return False
-
-    def insert(self, n):
-        if self.is_leaf():
-            # This is the bottom of the branch, so a new node needs to be made to make room
-            # The current leaf is moved into whatever quadrant it needs to
-
-            if self.node == None: # This is the first insert and the root is empty
-                self.node = n
-                return
-            
-            child_string = self.find_child_for_node(self.node)
-            self.create_child(child_string, self.node, self)
-            
-            self.node = None
-            self.leaf = False
-        
-        if abs(self.tl_corner.x - self.br_corner.x) >= 4 and abs(self.tl_corner.y - self.br_corner.y) >= 4:
-            # There's room for more subtrees
             child_string = self.find_child_for_node(n)
             child = self.get_child(child_string)
-            if child == None:
+            if child is None:
                 self.create_child(child_string, n, self)
-                return
+            else:
+                child.insert_node(n)
             
-            return child.insert(n)
+            self.node_count += 1
+    
+    def get_all_leaves(self):
+        if self.nodes != []:
+            return self.nodes
         else:
-            return
+            leaves = []
+            for child in self.children.values():
+                if child:
+                    leaves += child.get_all_leaves()
+            
+            return leaves
+    
+    def reabsorb(self):
+        self.nodes = self.get_all_leaves()
+        self.clear_children()
+        self.leaf = True
+    
+    def remove_node(self, n):
+        if self.nodes != []:
+            for index, node in enumerate(self.nodes):
+                if node.boid is n.boid:
+                    self.nodes.pop(index)
+                    self.node_count -= 1
+                    return
+            
+            raise RuntimeError("Unable to find boid in tree.")
+        else:
+            child_string = self.find_child_for_node(n)
+            child = self.get_child(child_string)
+            if child is None:
+                raise RuntimeError("Unable to find boid in tree.")
+            
+            child.remove_node(n)
+            self.node_count -= 1
+            if child.node_count <= 0:
+                self.set_child(child_string, None)
+            
+            if self.node_count < self.min_nodes:
+                self.reabsorb()
     
     def draw(self, screen):
-        if self.is_leaf():
-            if self.node is None:
-                print("why?")
+        if self.leaf:
+            for node in self.nodes:
+                pygame.draw.circle(screen, node.boid.color, (node.x, node.y), 2)
+            
             pygame.draw.rect(screen, (255, 0, 0), (self.tl_corner, self.br_corner - self.tl_corner + Vector(1, 1)), 1)
-            pygame.draw.circle(screen, (0, 0, 0), (self.node.x, self.node.y), 2)
         else:
             for child in self.children.values():
                 if child is not None:
@@ -187,31 +199,33 @@ if __name__ == '__main__':
     import sys, time
     from pygame.locals import *
     from main import create_boids
+    import random
     screen = pygame.display.set_mode((1280,720))
-    tree = QuadTree(Vector(0, 0), Vector(1280, 720))
-    boids = create_boids(1280, 720, 500)
-    # boids[0].position = Vector(10, 100)
-    # boids[1].position = Vector(300, 100)
-    # boids[2].position = Vector(800, 100)
-    for boid in boids:
-        node = Node(boid)
-        tree.insert(node)
-        screen.fill((255,255,255))
-        tree.draw(screen)
-        pygame.display.update()
-        time.sleep(0.01)
-    
-    time.sleep(5)
-    
-    for boid in boids:
-        tree.remove_boid(boid)
-        screen.fill((255,255,255))
-        tree.draw(screen)
-        pygame.display.update()
-        time.sleep(0.01)
+    tree = QuadTree(Vector(0, 0), Vector(1280, 720), max_nodes=4, min_nodes=3)
+    boids = []
     
     while True:
         for event in pygame.event.get():
-            if event.type == KEYDOWN and event.key == K_ESCAPE:
-                pygame.quit()
-                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == K_EQUALS:
+                    new_boids = create_boids(1280, 720, 50)
+                    for boid in new_boids:
+                        tree.insert_boid(boid)
+                    
+                    boids += new_boids
+                elif event.key == K_MINUS and boids:
+                    for i in range(min(50, len(boids))):
+                        boid = random.choice(boids)
+                        tree.remove_boid(boid)
+                        boids.remove(boid)
+            elif event.type == MOUSEBUTTONDOWN:
+                pos = Vector(pygame.mouse.get_pos())
+                boid = Boid(pos, Vector(0, 1), None)
+                success = tree.insert_boid(boid)
+        
+        screen.fill((255, 255, 255))
+        tree.draw(screen)
+        pygame.display.update()
