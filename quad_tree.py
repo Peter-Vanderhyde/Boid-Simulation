@@ -2,6 +2,13 @@ from pygame.math import Vector2 as Vector
 from pygame.locals import Rect
 from boid import Boid
 
+
+def create_tree(width, height, center, max_nodes, min_nodes):
+    tl = Vector(center.x - width // 2, center.y - height // 2)
+    br = tl + Vector(width, height)
+    tree = QuadTree(tl, br, max_nodes=max_nodes, min_nodes=min_nodes)
+    return tree
+
 class Node:
     def __init__(self, boid):
         self.boid = boid
@@ -20,7 +27,7 @@ class QuadTree:
         self.tl_corner = top_left
         self.br_corner = bottom_right
         self.center = Vector((self.tl_corner.x + self.br_corner.x) // 2, (self.tl_corner.y + self.br_corner.y) // 2)
-        self.rect = Rect(top_left, bottom_right - top_left + Vector(1, 1))
+        self.rect = Rect(top_left, bottom_right - top_left)
         self.clear_children()
     
     def clear_children(self):
@@ -180,6 +187,72 @@ class QuadTree:
             if self.node_count < self.min_nodes:
                 self.reabsorb()
     
+    def get_possible_nodes(self, check_rect):
+        if self.leaf:
+            return self.nodes
+        else:
+            all_nodes = []
+            for child in self.children.values():
+                if child and check_rect.colliderect(child.rect):
+                    all_nodes += child.get_possible_nodes(check_rect)
+            
+            return all_nodes
+    
+    def find_points_in_radius(self, position, radius):
+        rect = Rect(position.x - radius, position.y - radius, radius*2, radius*2)
+        possible_points = self.get_possible_nodes(rect)
+        in_range = []
+        for node in possible_points:
+            if position.distance_squared_to(node.boid.position) <= radius**2:
+                in_range.append(node)
+        
+        return in_range
+    
+    def get_boids_in_sight(self, boid):
+        nodes = self.find_points_in_radius(boid.position, max(boid.settings["view distance"]["value"], boid.settings["separation distance"]["value"]))
+        return [node.boid for node in nodes]
+
+    def adjust_boid_position(self, boid, dt):
+        node = Node(boid)
+        boid.position += boid.velocity * dt * 60
+        return self.update_node(node)
+    
+    def update_node(self, n):
+        if self.leaf:
+            for node in self.nodes:
+                if node.boid is n.boid:
+                    if self.rect.collidepoint(n.boid.position):
+                        node.x = n.boid.position.x
+                        node.y = n.boid.position.y
+                        return False
+                    else:
+                        self.nodes.remove(node)
+                        self.node_count -= 1
+                        return n
+            
+            raise RuntimeError("Unable to find boid.")
+        else:
+            child_string = self.find_child_for_node(n)
+            child = self.get_child(child_string)
+            if child is None:
+                raise RuntimeError("Unable to find boid.")
+            
+            node = child.update_node(n)
+            if not node:
+                return False
+            else:
+                self.node_count -= 1
+                if child.node_count <= 0:
+                    self.set_child(child_string, None)
+                
+                if self.rect.collidepoint(n.boid.position):
+                    n.x = n.boid.position.x
+                    n.y = n.boid.position.y
+                    self.insert_node(n)
+                    return False
+                else:
+                    return n
+
     def draw(self, screen):
         if self.leaf:
             for node in self.nodes:
@@ -201,8 +274,9 @@ if __name__ == '__main__':
     from main import create_boids
     import random
     screen = pygame.display.set_mode((1280,720))
-    tree = QuadTree(Vector(0, 0), Vector(1280, 720), max_nodes=4, min_nodes=3)
+    tree = QuadTree(Vector(0, 0), Vector(1280, 720), max_nodes=25, min_nodes=15)
     boids = []
+    circle = None
     
     while True:
         for event in pygame.event.get():
@@ -211,9 +285,7 @@ if __name__ == '__main__':
                     pygame.quit()
                     sys.exit()
                 elif event.key == K_EQUALS:
-                    new_boids = create_boids(1280, 720, 50)
-                    for boid in new_boids:
-                        tree.insert_boid(boid)
+                    new_boids = create_boids(1280, 720, tree, 200)
                     
                     boids += new_boids
                 elif event.key == K_MINUS and boids:
@@ -221,11 +293,25 @@ if __name__ == '__main__':
                         boid = random.choice(boids)
                         tree.remove_boid(boid)
                         boids.remove(boid)
+                elif event.key == K_RETURN:
+                    position = Vector(random.randint(0, 1280), random.randint(0, 720))
+                    circle = [position, random.randint(1, 1280)]
             elif event.type == MOUSEBUTTONDOWN:
                 pos = Vector(pygame.mouse.get_pos())
                 boid = Boid(pos, Vector(0, 1), None)
                 success = tree.insert_boid(boid)
-        
+
         screen.fill((255, 255, 255))
         tree.draw(screen)
+        if circle:
+            in_nodes = tree.find_points_in_radius(circle[0], circle[1])
+            for node in in_nodes:
+                pygame.draw.circle(screen, (0, 255, 0), node.boid.position, 2)
+
+            pygame.draw.circle(screen, (0, 200, 0), circle[0], circle[1], 2)
         pygame.display.update()
+        for boid in boids:
+            failed = tree.adjust_boid_position(boid)
+            if failed:
+                boid.velocity *= -1
+                tree.insert_boid(boid)

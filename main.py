@@ -5,29 +5,36 @@ from canvas import Canvas
 from boid import Boid
 from pygame.math import Vector2 as Vector
 import simulation
+import quad_tree
+import time
 pygame.init()
 
 
 settings = {
+    "boids": {
+    "value": 100,
+    "min": 1,
+    "max": 1000
+    },
     "view distance": {
         "value": 50,
         "min": 0,
-        "max": 500
+        "max": 100
     },
     "separation distance": {
         "value": 15,
         "min": 0,
-        "max": 250
+        "max": 100
     },
     "minimum speed": {
         "value": 3,
         "min": 0.1,
-        "max": 50
+        "max": 20
     },
     "maximum speed": {
         "value": 6,
         "min": 0.1,
-        "max": 50
+        "max": 20
     },
     "centering factor": {
         "value": 0.0005,
@@ -37,17 +44,17 @@ settings = {
     "matching factor": {
         "value": 0.05,
         "min": 0,
-        "max": 1.0
+        "max": 0.5
     },
     "avoid factor": {
         "value": 0.05,
         "min": 0,
-        "max": 1.0
+        "max": 0.5
     },
     "turn factor": {
         "value": 0.2,
         "min": 0,
-        "max": 10
+        "max": 5
     },
     "margin": {
         "value": 100,
@@ -73,7 +80,7 @@ def get_random_direction():
     
     return Vector(x, y).normalize()
 
-def create_boids(width, height, num_of_boids=10):
+def create_boids(width, height, tree, num_of_boids=10):
     """Creates boid objects with random positions and velocities."""
 
     boids = []
@@ -88,6 +95,7 @@ def create_boids(width, height, num_of_boids=10):
                     settings,
                     color=(155, 0, 0))
         boids.append(boid)
+        tree.insert_boid(boid)
     
     return boids
 
@@ -97,6 +105,7 @@ def main(width=1920, height=1080):
 
     FPS = 60
     clock = pygame.time.Clock() # Allows pygame to limit the fps
+    last_frame = time.time()
 
     settings["margin"]["max"] = min(width, height) / 2 - 1
     canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
@@ -105,12 +114,16 @@ def main(width=1920, height=1080):
         canvas.sidebar.add_property(key)
     
     width, height = canvas.width, canvas.height
-    boids = create_boids(width, height, num_of_boids=100)
+    tree = quad_tree.create_tree(5000, 5000, Vector(width // 2, height // 2), 25, 15)
+    boids = create_boids(width, height, tree=tree, num_of_boids=500)
 
     while True:
+        dt = time.time() - last_frame
+        last_frame = time.time()
         canvas.get_events() # Keypress events
         
-        simulation.simulate(boids, canvas.active_area, settings)
+        simulation.simulate(boids, canvas.active_area, settings, tree, dt)
+        # simulation.old_simulate(boids, canvas.active_area, settings)
         
         canvas.draw(boids)
 
