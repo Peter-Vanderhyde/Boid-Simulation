@@ -13,7 +13,7 @@ class Canvas:
         self.height = self.screen.get_height()
         self.sidebar = None
 
-        margin = settings["margin"]["value"]
+        margin = 100 # settings["margin"]["value"]
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
@@ -86,6 +86,6 @@ class Canvas:
                 elif event.key == pygame.K_TAB:
                     self.show_circles = not self.show_circles # Show view circles around boids
                 elif event.key == pygame.K_g:
-                    self.show_grid = not self.show_grid
+                    self.show_grid = not self.show_grid # Display the nodes of the quad tree
             
             self.sidebar.check_event(event)

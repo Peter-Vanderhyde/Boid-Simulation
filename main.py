@@ -56,11 +56,11 @@ settings = {
         "min": 0,
         "max": 5
     },
-    "margin": {
-        "value": 100,
-        "min": 0,
-        "max": None
-    },
+    # "margin": {
+    #     "value": 100,
+    #     "min": 0,
+    #     "max": None
+    # },
     "boid size": {
         "value": 8,
         "min": 0.01,
@@ -124,7 +124,8 @@ def main(width=1920, height=1080):
     clock = pygame.time.Clock() # Allows pygame to limit the fps
     last_frame = time.time()
 
-    settings["margin"]["max"] = min(width, height) / 2 - 1
+    # Setting margin not yet working
+    # settings["margin"]["max"] = min(width, height) / 2 - 1
     canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
     canvas.create_sidebar(width=250, margins=(10, 10))
     for key in settings.keys():
@@ -143,7 +144,7 @@ def main(width=1920, height=1080):
         minimum = settings["min per node"]["value"]
         maximum = settings["max per node"]["value"]
         if int(minimum) != tree.min_nodes or int(maximum) != tree.max_nodes:
-            tree.update(int(minimum), int(maximum))
+            tree.update_node_size(int(minimum), int(maximum))
 
         """ New Simulation Method """
         boid_setting = int(settings["boids"]["value"])
@@ -154,17 +155,6 @@ def main(width=1920, height=1080):
                 delete_boids(boids, tree, len(boids) - boid_setting)
         
         simulation.simulate(boids, canvas.active_area, settings, tree, dt)
-
-        """ Old Simulation Method """
-        # boid_setting = int(settings["boids"]["value"])
-        # if boid_setting != len(boids):
-        #     if len(boids) < boid_setting:
-        #         boids += create_boids(width, height, tree=tree, num_of_boids=boid_setting - len(boids))
-        #     else:
-        #         while len(boids) > boid_setting:
-        #             boids.remove(random.choice(boids))
-        
-        # simulation.old_simulate(boids, canvas.active_area, settings, dt)
         
         canvas.draw(boids)
 
