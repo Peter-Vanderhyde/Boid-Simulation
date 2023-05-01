@@ -67,7 +67,7 @@ settings = {
         "max": 30
     },
     "min per node": {
-        "value": 15,
+        "value": 20,
         "min": 1,
         "max": 50
     },
@@ -100,9 +100,9 @@ def create_boids(width, height, tree, num_of_boids=10):
         speed_range = settings["maximum speed"]["value"] - settings["minimum speed"]["value"]
         speed = settings["minimum speed"]["value"] + speed_range * random.random() # Randomize the speed
         velocity = get_random_direction() * speed
-        boid = Boid(position,
+        boid = Boid(settings,
+                    position,
                     velocity,
-                    settings,
                     color=(155, 0, 0))
         boids.append(boid)
         tree.insert_boid(boid)

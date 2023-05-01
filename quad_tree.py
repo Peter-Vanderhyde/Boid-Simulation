@@ -377,7 +377,7 @@ if __name__ == '__main__':
             elif event.type == MOUSEBUTTONDOWN:
                 # Add a boid at the position of the click
                 pos = Vector(pygame.mouse.get_pos())
-                boid = Boid(pos, Vector(0, 1), None)
+                boid = Boid({}, pos)
                 success = tree.insert_boid(boid)
                 boids.append(boid)
 
