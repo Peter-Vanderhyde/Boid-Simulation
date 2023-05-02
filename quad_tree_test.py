@@ -9,6 +9,7 @@ class TestQuadTreeMethods(unittest.TestCase):
     def setUp(self):
         self.tree = qt.QuadTree(Vector2(-1000, -1000), Vector2(1000, 1000), max_nodes=3, min_nodes=2)
         self.tree.nodes = []
+        self.tree.node_count = 0
         self.tree.clear_children()
     
     def test_1_node(self):
@@ -26,6 +27,26 @@ class TestQuadTreeMethods(unittest.TestCase):
         self.tree.insert_node(n)
         with self.subTest("Multiple nodes inserted."):
             self.assertEqual(self.tree.nodes[1], n)
+
+        with self.subTest("Node at borders not inserted."):
+            self.tree.max_nodes = 4
+            self.tree.nodes = []
+            self.tree.node_count = 0
+            self.tree.insert_node(qt.Node(Boid({}, Vector2(1000, 1000))))
+            self.tree.insert_node(qt.Node(Boid({}, Vector2(-1000, 1000))))
+            self.tree.insert_node(qt.Node(Boid({}, Vector2(1000, -1000))))
+            self.tree.insert_node(qt.Node(Boid({}, Vector2(-1000, -1000))))
+            self.assertTrue(len(self.tree.nodes) == 4)
+        
+        with self.subTest("Node at center corner not inserted."):
+            self.tree.nodes = []
+            self.tree.node_count = 0
+            self.tree.insert_node(qt.Node(Boid({}, Vector2(0, 0))))
+            self.assertTrue(len(self.tree.nodes) == 1)
+        
+        with self.subTest("Node inserted outside the border."):
+            # Insert a node with x outside of 1000 boundary
+            self.assertRaises(RuntimeError, self.tree.insert_node, qt.Node(Boid({}, Vector2(1001, 0))))
     
     def test_3_quad_divide(self):
         n1 = qt.Node(Boid({}, Vector2(100, 100)))
@@ -33,19 +54,88 @@ class TestQuadTreeMethods(unittest.TestCase):
         n2 = qt.Node(Boid({}, Vector2(-100, 100)))
         self.tree.insert_node(n2)
         self.tree.divide()
-        with self.subTest("BR child created."):
+        with self.subTest("BR child not created."):
             child = self.tree.children['br']
             self.assertTrue(child and child.nodes == [n1])
         
-        with self.subTest("BL child created."):
+        with self.subTest("BL child not created."):
             child = self.tree.children['bl']
             self.assertTrue(child and child.nodes == [n2])
         
-        with self.subTest("TL and TR are empty."):
+        with self.subTest("TL and TR are not empty."):
             self.assertFalse(self.tree.children['tl'] or self.tree.children['tr'])
         
-        with self.subTest("Root empty."):
-            self.assertListEqual(self.tree.nodes, [])
+        with self.subTest("Root not empty."):
+            self.assertTrue(self.tree.nodes == [] and self.tree.node_count == 2)
+    
+    def test_4_quad_insert_divide(self):
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(220, 220))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(20, 20))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(-220, 220))))
+        with self.subTest("Tree divided too early."):
+            self.assertTrue(not any(self.tree.children.values()) and len(self.tree.nodes) == 3)
+        
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(220, -220))))
+        with self.subTest("Tree did not divide."):
+            self.assertTrue(
+                self.tree.nodes == [] and\
+                any(self.tree.children.values()) and\
+                self.tree.node_count == 4
+            )
+        
+    def test_5_quad_insert_children(self):
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(10, 10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(-10, 10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(10, -10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(-10, -10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(100, 100))))
+        self.assertEqual(self.tree.children['br'].node_count, 2)
+    
+    def test_6_quad_reabsorb(self):
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(10, 10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(100, 10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(10, -10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(-10, -10))))
+        with self.subTest("Did not create child."):
+            self.assertTrue(self.tree.children['br'].node_count == 2 and self.tree.nodes == [])
+
+        self.tree.reabsorb()        
+        with self.subTest("Nodes were not reabsorbed."):
+            self.assertTrue(
+                len(self.tree.nodes) == 4 and\
+                not any(self.tree.children.values())
+            )
+    
+    def test_7_quad_remove_node(self):
+        n = qt.Node(Boid({}, Vector2(10, 10)))
+        self.tree.insert_node(n)
+        with self.subTest("No error thrown when removing non-existent node."):
+            self.assertRaises(RuntimeError, self.tree.remove_node, qt.Node(Boid({}, Vector2(20, 20))))
+        
+        self.tree.remove_node(n)
+        with self.subTest("Node was not removed."):
+            self.assertTrue(
+                n not in self.tree.nodes and\
+                self.tree.node_count == 0
+            )
+        
+        nodes = [qt.Node(Boid({}, Vector2(i, i))) for i in range(4)]
+        for n in nodes:
+            self.tree.insert_node(n)
+        
+        with self.subTest("Progress check."):
+            self.assertEqual(self.tree.node_count, 4)
+        
+        for n in nodes:
+            self.tree.remove_node(n)
+        
+        with self.subTest("Tree not empty."):
+            self.assertTrue(
+                self.tree.node_count == 0 and\
+                self.tree.nodes == [] and\
+                not any(self.tree.children.values())
+            )
+
 
 
 if __name__ == '__main__':

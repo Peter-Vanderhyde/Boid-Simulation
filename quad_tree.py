@@ -65,6 +65,14 @@ class QuadTree:
         else:
             raise TypeError("Attempted to set child as non quadtree type.")
     
+    def node_within_bounds(self, n):
+        """Returns the string of which child quad the node is inside."""
+
+        x, y = self.center
+        tx, ty = self.tl_corner
+        bx, by = self.br_corner
+        return tx <= n.x <= bx and ty <= n.y <= by
+    
     def find_child_string_for_node(self, n):
         """Returns the string of which child quad the node is inside."""
 
@@ -140,6 +148,10 @@ class QuadTree:
         """Finds the correct leaf to place the given node into."""
 
         if self.leaf:
+            if not self.node_within_bounds(n):
+                # The node is outside of the area of the tree.
+                raise RuntimeError("Node outside of tree boundaries.")
+            
             self.nodes.append(n)
             self.node_count += 1
             if len(self.nodes) > self.max_nodes and\
@@ -151,6 +163,10 @@ class QuadTree:
             child_string = self.find_child_string_for_node(n)
             child = self.get_child(child_string)
             if child is None:
+                if not self.node_within_bounds(n):
+                    # Node can't be placed within the bounds anyway
+                    raise RuntimeError("Node outside of tree boundaries.")
+                
                 # Create a new leaf to place the node in
                 self.create_child(child_string, n, self)
             else:
@@ -172,7 +188,7 @@ class QuadTree:
             return leaves
     
     def reabsorb(self):
-        """Finds every node in its children, at makes itself a leaf to hold them, and deletes its children."""
+        """Finds every node in its children, it makes itself a leaf to hold them, and deletes its children."""
 
         self.nodes = self.get_all_leaves()
         self.clear_children()
