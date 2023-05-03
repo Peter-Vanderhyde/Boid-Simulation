@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import *
-import math
+import math, time
 from pygame.math import Vector2 as Vector
 
     
@@ -128,7 +128,11 @@ class Sidebar:
                             # First click, so select and highlight
                             prop.textbox.selected = True
                             prop.textbox.highlighted = True
-                    elif get_offset_rect(prop.slider.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                    elif get_offset_rect(Rect(prop.slider.rect.left - 5,
+                                              prop.slider.rect.top,
+                                              prop.slider.rect.width + 10,
+                                              prop.slider.rect.height),
+                                        Vector(0, self.scroll_y)).collidepoint(mouse_pos):
                         prop.textbox.selected = False
                         prop.textbox.highlighted = False
                         self.selected_slider = prop.slider # Selected a slider
@@ -294,7 +298,7 @@ class TextBox:
 
 
 class Slider:
-    """A slider allows the user to set a value between two values by moving the slider."""
+    """A slider that allows the user to set a value between two values by moving the slider."""
 
     def __init__(self, parent, value, min_val, max_val, width, height, top_left):
         self.parent = parent # Link to parent Property for changing the settings and textbox

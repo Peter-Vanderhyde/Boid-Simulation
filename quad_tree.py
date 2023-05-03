@@ -147,11 +147,12 @@ class QuadTree:
     def insert_node(self, n):
         """Finds the correct leaf to place the given node into."""
 
+        if self.parent == None and not self.node_within_bounds(n): # In the root
+            # The node is outside of the area of the tree.
+            print(self.tl_corner, self.br_corner, n.boid.position)
+            raise RuntimeError("Node outside of tree boundaries.")
+
         if self.leaf:
-            if not self.node_within_bounds(n):
-                # The node is outside of the area of the tree.
-                raise RuntimeError("Node outside of tree boundaries.")
-            
             self.nodes.append(n)
             self.node_count += 1
             if len(self.nodes) > self.max_nodes and\
@@ -163,10 +164,6 @@ class QuadTree:
             child_string = self.find_child_string_for_node(n)
             child = self.get_child(child_string)
             if child is None:
-                if not self.node_within_bounds(n):
-                    # Node can't be placed within the bounds anyway
-                    raise RuntimeError("Node outside of tree boundaries.")
-                
                 # Create a new leaf to place the node in
                 self.create_child(child_string, n, self)
             else:
