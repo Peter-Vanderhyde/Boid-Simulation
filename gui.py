@@ -15,7 +15,8 @@ def get_offset_rect(rect, offset):
 class Sidebar:
     """This is the entire bar on the side that contains all of the gui elements."""
 
-    def __init__(self, screen, width, margins, settings):
+    def __init__(self, screen, width, margins, settings, bg_color=(100, 100, 100), scrollbar_shade=(150, 150, 150),
+                 text_color=(0, 0, 0), slider_color=(150, 150, 150)):
         self.screen = screen
         self.s_width = screen.get_width()
         self.s_height = screen.get_height()
@@ -23,6 +24,10 @@ class Sidebar:
         self.rect = pygame.Rect(self.s_width - width, 0, width, self.s_height)
         self.margins = margins # TODO I need to make this responsive
         self.settings = settings
+        self.bg_color = bg_color
+        self.scrollbar_shade_color = scrollbar_shade
+        self.text_color = text_color
+        self.slider_color = slider_color
         self.font_name = "calibri"
         self.properties = []
         self.scroll_y = 0
@@ -61,7 +66,9 @@ class Sidebar:
             bot_of_last_prop += prop.height
         
         prop = Property(property_name, self.font_name, value, min_value, max_value,
-                        Vector(self.s_width - self.width + self.margins[0], bot_of_last_prop))
+                        Vector(self.s_width - self.width + self.margins[0], bot_of_last_prop),
+                        text_color=self.text_color, slider_color=self.slider_color,
+                        shade_color=self.scrollbar_shade_color)
         self.properties.append(prop)
         self.max_scroll -= prop.height
         self.calculate_scrollbar_props()
@@ -73,11 +80,11 @@ class Sidebar:
         self.scroll_y = max(self.max_scroll, min(0, self.scroll_y))
     
     def draw_scrollbar(self):
-        pygame.draw.rect(self.screen, (100, 100, 100),
+        pygame.draw.rect(self.screen, self.scrollbar_shade_color,
                          (self.rect.right - 10, self.rect.top, 10, self.rect.height), border_radius=20)
-        pygame.draw.rect(self.screen, (150, 150, 150),
+        pygame.draw.rect(self.screen, self.bg_color,
                          self.get_scrollbar_pos(), border_radius=20)
-        pygame.draw.rect(self.screen, (100, 100, 100),
+        pygame.draw.rect(self.screen, self.scrollbar_shade_color,
                          self.get_scrollbar_pos(), 1, border_radius=20)
     
     def draw(self):
@@ -90,7 +97,7 @@ class Sidebar:
         
         # Scrollbar background
         width, height = self.screen.get_size()
-        pygame.draw.rect(self.screen, (150, 150, 150), (width - self.width, 0, self.width, height),
+        pygame.draw.rect(self.screen, self.bg_color, (width - self.width, 0, self.width, height),
                          border_top_left_radius=15, border_bottom_left_radius=15)
 
         # Draw properties
@@ -172,13 +179,16 @@ class Sidebar:
 class Property:
     """A sidebar element consisting of a title, textbox, and slider."""
 
-    def __init__(self, name, font_name, value, min_value, max_value, top_left):
+    def __init__(self, name, font_name, value, min_value, max_value, top_left, text_color, slider_color, shade_color):
         self.name = name
         self.font_name = font_name
         self.value = value
         self.min_value = min_value
         self.max_value = max_value
         self.top_left = top_left
+        self.text_color = text_color
+        self.slider_color = slider_color
+        self.shade_color = shade_color
         self.title = None
         self.textbox = None
         self.slider = None
@@ -189,15 +199,15 @@ class Property:
         self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
     def create_title(self, top_left):
-        title = Text(self, self.name.capitalize(), self.font_name, 15, (0, 0, 0), top_left)
+        title = Text(self, self.name.capitalize(), self.font_name, 15, self.text_color, top_left)
         self.title = title
     
     def create_textbox(self, top_left):
-        textbox = TextBox(self, str(self.value), self.font_name, 150, 15, top_left)
+        textbox = TextBox(self, str(self.value), self.font_name, 150, 15, top_left, self.text_color)
         self.textbox = textbox
     
     def create_slider(self, top_left):
-        slider = Slider(self, self.value, self.min_value, self.max_value, 150, 20, top_left)
+        slider = Slider(self, self.value, self.min_value, self.max_value, 150, 20, top_left, self.slider_color, self.shade_color)
         self.slider = slider
     
     def draw(self, screen, offset_y):
@@ -210,10 +220,10 @@ class TextBox:
     """This creates an editable box where a user can select the box and type
     whatever number value they want."""
 
-    def __init__(self, parent, value, font_name, width, height, top_left):
+    def __init__(self, parent, value, font_name, width, height, top_left, text_color):
         self.parent = parent # Links to parent Property so the textbox can affect the slider
         self.value = value
-        self.text = Text(self, str(value), font_name, height, (0, 0, 0), top_left)
+        self.text = Text(self, str(value), font_name, height, text_color, top_left)
         self.width = width
         self.height = height
         self.top_left = top_left
@@ -300,7 +310,7 @@ class TextBox:
 class Slider:
     """A slider that allows the user to set a value between two values by moving the slider."""
 
-    def __init__(self, parent, value, min_val, max_val, width, height, top_left):
+    def __init__(self, parent, value, min_val, max_val, width, height, top_left, slider_color, text_color):
         self.parent = parent # Link to parent Property for changing the settings and textbox
         self.value = value
         self.min_val = min_val
@@ -308,8 +318,20 @@ class Slider:
         self.width = width
         self.height = height
         self.top_left = top_left
+        self.slider_color = slider_color
+        self.accents = self.get_accents(self.slider_color)
+        self.slide_line_color = text_color
         self.rect = Rect(top_left.x, top_left.y, width, height)
         self.ratio = self.get_ratio() # The pixel to value ratio
+    
+    def get_accents(self, color):
+        def reduce(c):
+            return max(c - 30, 0)
+
+        def increase(c):
+            return min(c + 30, 255)
+
+        return [tuple([reduce(c) for c in color]), tuple([increase(c) for c in color])]
     
     def get_ratio(self):
         """Based on the value range, get the ratio of value change per pixel change."""
@@ -350,9 +372,11 @@ class Slider:
         """Draw the slider at the position based off its value."""
 
         rect = get_offset_rect(self.rect, offset)
-        pygame.draw.line(screen, (0, 0, 0), rect.midleft, rect.midright)
+        pygame.draw.line(screen, self.slide_line_color, rect.midleft, rect.midright)
         x_pos = rect.left + (self.value - self.min_val) * self.ratio
-        pygame.draw.rect(screen, (225, 225, 225), (x_pos - 5, rect.top, 10, self.height))
+        pygame.draw.rect(screen, self.accents[0], (x_pos - 5, rect.top, 10, self.height))
+        pygame.draw.rect(screen, self.accents[1], (x_pos - 2, rect.top, 8, self.height - 2))
+        pygame.draw.rect(screen, self.slider_color, (x_pos - 2, rect.top + 2, 6, self.height - 4))
 
 
 class Text:

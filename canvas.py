@@ -24,8 +24,15 @@ class Canvas:
         self.show_circles = False
         self.show_grid = False
     
-    def create_sidebar(self, width, margins=(0, 0)):
-        self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings)
+    def create_sidebar(self, width, margins=(0, 0), bg_color=(100, 100, 100), text_color=(0, 0, 0), slider_color=(150, 150, 150)):
+        def check(color):
+            return max(color - 30, 0)
+        
+        self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings,
+                                   bg_color=bg_color,
+                                   scrollbar_shade=(check(bg_color[0]), check(bg_color[1]), check(bg_color[2])),
+                                   text_color=text_color,
+                                   slider_color=slider_color)
         margin = self.active_area[0][0]
         self.active_area = ((margin, margin),
                     (self.width - width - margin * 2, self.height - margin * 2))

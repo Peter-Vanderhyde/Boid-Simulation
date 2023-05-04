@@ -67,12 +67,12 @@ settings = {
         "max": 30
     },
     "min per node": {
-        "value": 20,
+        "value": 15,
         "min": 1,
         "max": 50
     },
     "max per node": {
-        "value": 15,
+        "value": 20,
         "min": 1,
         "max": 50
     }
@@ -103,7 +103,7 @@ def create_boids(width, height, tree, num_of_boids=10):
         boid = Boid(settings,
                     position,
                     velocity,
-                    color=(155, 0, 0))
+                    color=(227, 220, 194))
         boids.append(boid)
         tree.insert_boid(boid)
     
@@ -126,8 +126,11 @@ def main(width=1920, height=1080):
 
     # Setting margin not yet working
     # settings["margin"]["max"] = min(width, height) / 2 - 1
-    canvas = Canvas(width, height, (255, 255, 255), settings) # Handles functions for drawing, and events
-    canvas.create_sidebar(width=250, margins=(10, 10))
+    canvas = Canvas(width, height, (27, 32, 33), settings) # Handles functions for drawing, and events
+    canvas.create_sidebar(width=250, margins=(10, 10),
+                          bg_color=(166, 168, 103),
+                          text_color=(81, 81, 61),
+                          slider_color=(227, 220, 149))
     for key in settings.keys():
         canvas.sidebar.add_property(key)
     

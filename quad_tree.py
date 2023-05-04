@@ -218,7 +218,7 @@ class QuadTree:
                 self.reabsorb()
     
     def get_possible_nodes(self, check_rect):
-        """Based on a given Rect, find all nodes who overlap with that rect, as
+        """Based on a given Rect, find all quads who overlap with that rect, as
         they may contain nodes within the Rect."""
 
         if self.leaf:
@@ -331,7 +331,7 @@ class QuadTree:
     def draw_grid(self, screen):
         """For display the node quadrants on the simulation screen."""
 
-        pygame.draw.rect(screen, (150, 150, 150), (self.rect.left,
+        pygame.draw.rect(screen, (255, 255, 255), (self.rect.left,
                                                    self.rect.top, 
                                                    self.rect.width + 1,
                                                    self.rect.height + 1), 1)

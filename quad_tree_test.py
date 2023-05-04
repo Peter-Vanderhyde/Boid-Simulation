@@ -135,6 +135,9 @@ class TestQuadTreeMethods(unittest.TestCase):
                 self.tree.nodes == [] and\
                 not any(self.tree.children.values())
             )
+    
+    def test_8_quad_possible_nodes(self):
+        pass
 
 
 
