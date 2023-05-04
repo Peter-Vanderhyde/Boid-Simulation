@@ -2,6 +2,7 @@ import unittest
 unittest.TestLoader.sortTestMethodsUsing = None
 import quad_tree as qt
 from pygame.math import Vector2
+from pygame import Rect
 from boid import Boid
 
 
@@ -137,7 +138,16 @@ class TestQuadTreeMethods(unittest.TestCase):
             )
     
     def test_8_quad_possible_nodes(self):
-        pass
+        n1 = qt.Node(Boid({}, Vector2(100, 100)))
+        n2 = qt.Node(Boid({}, Vector2(800, -500)))
+        self.tree.insert_node(n1)
+        self.tree.insert_node(n2)
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(-10, -10))))
+        self.tree.insert_node(qt.Node(Boid({}, Vector2(-10, 400))))
+        rect = Rect(500, -20, 10, 80)
+        possibilities = self.tree.get_possible_nodes(rect)
+        self.assertTrue(len(possibilities) == 2 and n1 in possibilities and n2 in possibilities,
+                        "Didn't find the correct possible nodes")
 
 
 

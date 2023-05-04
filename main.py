@@ -56,11 +56,6 @@ settings = {
         "min": 0,
         "max": 5
     },
-    # "margin": {
-    #     "value": 100,
-    #     "min": 0,
-    #     "max": None
-    # },
     "boid size": {
         "value": 8,
         "min": 0.01,
@@ -94,7 +89,7 @@ def create_boids(width, height, tree, num_of_boids=10):
     """Creates boid objects with random positions and velocities."""
 
     boids = []
-    for i in range(num_of_boids):
+    for _ in range(num_of_boids):
         x, y = random.randint(0, width), random.randint(0, height)
         position = Vector(x, y)
         speed_range = settings["maximum speed"]["value"] - settings["minimum speed"]["value"]
