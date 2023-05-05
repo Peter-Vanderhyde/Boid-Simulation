@@ -12,9 +12,9 @@ pygame.init()
 
 settings = {
     "boids": {
-    "value": 100,
-    "min": 1,
-    "max": 5000
+        "value": 100,
+        "min": 1,
+        "max": 5000
     },
     "view distance": {
         "value": 50,
