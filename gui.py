@@ -373,6 +373,7 @@ class Slider:
 
         rect = get_offset_rect(self.rect, offset)
         pygame.draw.line(screen, self.slide_line_color, rect.midleft, rect.midright)
+        pygame.draw.line(screen, self.accents[0], (rect.midleft[0], rect.midleft[1] + 1), (rect.midright[0], rect.midright[1] + 1))
         x_pos = rect.left + (self.value - self.min_val) * self.ratio
         pygame.draw.rect(screen, self.accents[0], (x_pos - 5, rect.top, 10, self.height))
         pygame.draw.rect(screen, self.accents[1], (x_pos - 2, rect.top, 8, self.height - 2))
