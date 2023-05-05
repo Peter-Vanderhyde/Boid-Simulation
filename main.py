@@ -7,6 +7,7 @@ from pygame.math import Vector2 as Vector
 import simulation
 import quad_tree
 import time
+import copy
 pygame.init()
 
 
@@ -73,7 +74,7 @@ settings = {
     }
 }
 
-default_settings = settings.copy()
+default_settings = copy.deepcopy(settings)
 
 def get_random_direction():
     x, y = 0, 0
@@ -121,7 +122,7 @@ def main(width=1920, height=1080):
 
     # Setting margin not yet working
     # settings["margin"]["max"] = min(width, height) / 2 - 1
-    canvas = Canvas(width, height, (27, 32, 33), settings) # Handles functions for drawing, and events
+    canvas = Canvas(width, height, (27, 32, 33), settings, default_settings) # Handles functions for drawing, and events
     canvas.create_sidebar(width=250, margins=(10, 10),
                           bg_color=(166, 168, 103),
                           text_color=(81, 81, 61),

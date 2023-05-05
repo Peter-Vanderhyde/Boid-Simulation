@@ -6,7 +6,7 @@ import gui
 class Canvas:
     """This class takes care of drawing the window, drawing the boids, and handling window events."""
 
-    def __init__(self, width, height, bg_color, settings):
+    def __init__(self, width, height, bg_color, settings, default_settings):
         self.screen = pygame.display.set_mode((width, height)) # Create window
         self.bg_color = bg_color
         self.width = self.screen.get_width()
@@ -20,6 +20,7 @@ class Canvas:
                     (self.width - margin * 2, self.height - margin * 2))
 
         self.settings = settings
+        self.default_settings = default_settings
         self.tree = None
         self.show_circles = False
         self.show_grid = False
@@ -28,7 +29,7 @@ class Canvas:
         def check(color):
             return max(color - 30, 0)
         
-        self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings,
+        self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings, self.default_settings,
                                    bg_color=bg_color,
                                    scrollbar_shade=(check(bg_color[0]), check(bg_color[1]), check(bg_color[2])),
                                    text_color=text_color,

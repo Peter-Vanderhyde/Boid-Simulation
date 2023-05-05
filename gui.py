@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import *
-import math, time
+import math
 from pygame.math import Vector2 as Vector
 
     
@@ -15,7 +15,7 @@ def get_offset_rect(rect, offset):
 class Sidebar:
     """This is the entire bar on the side that contains all of the gui elements."""
 
-    def __init__(self, screen, width, margins, settings, bg_color=(100, 100, 100), scrollbar_shade=(150, 150, 150),
+    def __init__(self, screen, width, margins, settings, default_setting, bg_color=(100, 100, 100), scrollbar_shade=(150, 150, 150),
                  text_color=(0, 0, 0), slider_color=(150, 150, 150)):
         self.screen = screen
         self.s_width = screen.get_width()
@@ -24,6 +24,7 @@ class Sidebar:
         self.rect = pygame.Rect(self.s_width - width, 0, width, self.s_height)
         self.margins = margins # TODO I need to make this responsive
         self.settings = settings
+        self.default_settings = default_setting
         self.bg_color = bg_color
         self.scrollbar_shade_color = scrollbar_shade
         self.text_color = text_color
@@ -65,7 +66,7 @@ class Sidebar:
         for prop in self.properties:
             bot_of_last_prop += prop.height
         
-        prop = Property(property_name, self.font_name, value, min_value, max_value,
+        prop = Property(property_name, self.settings, self.default_settings, self.font_name, value, min_value, max_value,
                         Vector(self.s_width - self.width + self.margins[0], bot_of_last_prop),
                         text_color=self.text_color, slider_color=self.slider_color,
                         shade_color=self.scrollbar_shade_color)
@@ -144,6 +145,13 @@ class Sidebar:
                         prop.textbox.highlighted = False
                         self.selected_slider = prop.slider # Selected a slider
                         self.last_slider_pos = mouse_pos
+                    elif get_offset_rect(prop.button.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                        button = prop.button
+                        if button.active:
+                            self.settings[prop.name]['value'] = self.default_settings[prop.name]['value']
+                            prop.textbox.set_value(str(self.settings[prop.name]["value"]))
+                            prop.textbox.apply_value(self.settings)
+                            button.active = False
                     else:
                         if prop.textbox.selected:
                             # User clicked outside textbox, so apply the input value
@@ -179,8 +187,10 @@ class Sidebar:
 class Property:
     """A sidebar element consisting of a title, textbox, and slider."""
 
-    def __init__(self, name, font_name, value, min_value, max_value, top_left, text_color, slider_color, shade_color):
+    def __init__(self, name, settings, default_settings, font_name, value, min_value, max_value, top_left, text_color, slider_color, shade_color):
         self.name = name
+        self.settings = settings
+        self.default_settings = default_settings
         self.font_name = font_name
         self.value = value
         self.min_value = min_value
@@ -192,9 +202,11 @@ class Property:
         self.title = None
         self.textbox = None
         self.slider = None
+        self.button = None
         self.create_title(top_left)
         self.create_textbox(top_left + Vector(0, self.title.rect.height + 2))
         self.create_slider(top_left + Vector(0, self.title.rect.height + self.textbox.rect.height + 4))
+        self.create_button()
         prop_y_margins = 15 # Spacing between each property
         self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
@@ -210,10 +222,63 @@ class Property:
         slider = Slider(self, self.value, self.min_value, self.max_value, 150, 20, top_left, self.slider_color, self.shade_color)
         self.slider = slider
     
+    def create_button(self):
+        x, y = self.textbox.rect.midright
+        button = Button(self, self.font_name, 70, 15, (x + 3, y), self.text_color, self.slider_color, self.get_accents(self.slider_color))
+        self.button = button
+    
+    def get_accents(self, color):
+        def reduce(c):
+            return max(c - 100, 0)
+
+        def increase(c):
+            return max(c - 30, 0)
+
+        return [tuple([reduce(c) for c in color]), tuple([increase(c) for c in color])]
+
+    def update_button(self):
+        if self.settings[self.name]['value'] == self.default_settings[self.name]['value']:
+            self.button.active = False
+        else:
+            self.button.active = True
+    
     def draw(self, screen, offset_y):
         self.title.draw(screen, Vector(0, offset_y))
         self.textbox.draw(screen, Vector(0, offset_y))
         self.slider.draw(screen, Vector(0, offset_y))
+        self.button.draw(screen, Vector(0, offset_y))
+
+
+class Button:
+    """This is for a button that returns the value back to the default."""
+
+    def __init__(self, parent, font_name, width, height, mid_left, text_color, button_color, button_accents):
+        self.parent = parent
+        self.font_name = font_name
+        self.width = width
+        self.height = height
+        self.mid_left = mid_left
+        self.text_color = text_color
+        self.button_color = button_color
+        self.button_accents = button_accents
+        self.rect = Rect(0, 0, width, height)
+        self.rect.midleft = mid_left
+        self.text = Text(self, "Default", font_name, height, text_color, self.rect.topleft)
+        self.text.rect.center = self.rect.center
+        self.active = False
+    
+    def draw(self, screen, offset=Vector(0, 0)):
+        """Draws the button to the screen."""
+
+        new_rect = get_offset_rect(self.rect, offset)
+        if self.active:
+            pygame.draw.rect(screen, self.button_color, new_rect, border_radius=2)
+        
+        self.text.draw(screen, offset)
+        if self.active:
+            pygame.draw.rect(screen, self.button_accents[0], new_rect, 1, 2)
+        else:
+            pygame.draw.rect(screen, self.button_accents[1], new_rect, 1, 2)
 
 
 class TextBox:
@@ -254,6 +319,7 @@ class TextBox:
             self.set_value(str(setting['value']))
         
         self.parent.slider.set_value(setting['value'])
+        self.parent.update_button()
     
     def check_typing_event(self, event):
         """This will edit the value based on values typed."""
@@ -352,6 +418,7 @@ class Slider:
         setting = settings[self.parent.name]
         setting['value'] = round(self.value, 4)
         self.parent.textbox.set_value(str(setting['value']))
+        self.parent.update_button()
     
     def update_pos(self, pos):
         """Moves the slider to the correct x position and sets the value based on the position."""
