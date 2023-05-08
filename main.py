@@ -120,8 +120,6 @@ def main(width=1920, height=1080):
     clock = pygame.time.Clock() # Allows pygame to limit the fps
     last_frame = time.time()
 
-    # Setting margin not yet working
-    # settings["margin"]["max"] = min(width, height) / 2 - 1
     canvas = Canvas(width, height, (27, 32, 33), settings, default_settings) # Handles functions for drawing, and events
     canvas.create_sidebar(width=250, margins=(10, 10),
                           bg_color=(166, 168, 103),

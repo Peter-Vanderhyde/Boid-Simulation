@@ -268,8 +268,8 @@ class QuadTree:
             # Quick dirty fix
             boid.velocity *= -1 # Reverse the velocity
             # Move the boid back within the bounds of the tree
-            boid.position.x = min(max(boid.position.x, self.tl_corner.x), self.br_corner.x)
-            boid.position.y = min(max(boid.position.y, self.tl_corner.y), self.br_corner.y)
+            boid.position.x = min(max(boid.position.x, self.tl_corner.x + 10), self.br_corner.x - 10)
+            boid.position.y = min(max(boid.position.y, self.tl_corner.y + 10), self.br_corner.y - 10)
             self.insert_boid(boid)
     
     def update_node(self, n):
