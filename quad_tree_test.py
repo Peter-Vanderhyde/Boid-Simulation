@@ -149,6 +149,21 @@ class TestQuadTreeMethods(unittest.TestCase):
         self.assertTrue(len(possibilities) == 2 and n1 in possibilities and n2 in possibilities,
                         "Didn't find the correct possible nodes")
 
+    def test_9_quad_in_radius(self):
+        n1 = qt.Node(Boid({}, Vector(10, 5)))
+        n2 = qt.Node(Boid({}, Vector(0, 100)))
+        pos = Vector(7, 4)
+        pos.scale_to_length(101)
+        n3 = qt.Node(Boid({}, pos))
+        self.tree.insert_node(n1)
+        self.tree.insert_node(n2)
+        self.tree.insert_node(n3)
+        nodes_in_sight = self.tree.find_points_in_radius(Vector(0, 0), 100)
+        self.assertTrue(n1 in nodes_in_sight and
+                        n2 in nodes_in_sight and
+                        n3 not in nodes_in_sight,
+                        "Incorrect nodes in sight.")
+
 
 
 if __name__ == '__main__':
