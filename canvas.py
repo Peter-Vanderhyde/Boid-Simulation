@@ -24,6 +24,10 @@ class Canvas:
         self.tree = None
         self.show_circles = False
         self.show_grid = False
+        self.infos = self.create_info(["TAB - Show vision and separation distance", "G - Show quad tree"],
+                                     "calibri",
+                                     15,
+                                     (255, 255, 255))
     
     def create_sidebar(self, width, margins=(0, 0), bg_color=(100, 100, 100), text_color=(0, 0, 0), slider_color=(150, 150, 150)):
         def check(color):
@@ -38,11 +42,20 @@ class Canvas:
         self.active_area = ((margin, margin),
                     (self.width - width - margin * 2, self.height - margin * 2))
     
+    def create_info(self, info_texts, font_name, size, color):
+        infos = []
+        for index, text in enumerate(info_texts):
+            infos.append(gui.Text(text, font_name, size, color, Vector(5, 5 + size * index)))
+        
+        return infos
+    
     def draw(self, boids):
         self.draw_background()
         self.draw_boids(boids)
         if self.sidebar:
             self.sidebar.draw()
+        
+        self.draw_info()
     
     def draw_background(self):
         """Fills the screen with the background color and draws a square for the active area."""
@@ -78,6 +91,10 @@ class Canvas:
                 # Show view range circles around the boids
                 pygame.draw.circle(self.screen, (150, 255, 150), list(boid.position), self.settings["view distance"]["value"], 1)
                 pygame.draw.circle(self.screen, (255, 150, 150), list(boid.position), self.settings["separation distance"]["value"], 1)
+    
+    def draw_info(self):
+        for info in self.infos:
+            info.draw(self.screen)
     
     def get_events(self):
         """Check every window event."""

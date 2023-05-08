@@ -211,7 +211,7 @@ class Property:
         self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
     def create_title(self, top_left):
-        title = Text(self, self.name.capitalize(), self.font_name, 15, self.text_color, top_left)
+        title = Text(self.name.capitalize(), self.font_name, 15, self.text_color, top_left)
         self.title = title
     
     def create_textbox(self, top_left):
@@ -263,7 +263,7 @@ class Button:
         self.button_accents = button_accents
         self.rect = Rect(0, 0, width, height)
         self.rect.midleft = mid_left
-        self.text = Text(self, "Default", font_name, height, text_color, self.rect.topleft)
+        self.text = Text("Default", font_name, height, text_color, self.rect.topleft)
         self.text.rect.center = self.rect.center
         self.active = False
     
@@ -288,7 +288,7 @@ class TextBox:
     def __init__(self, parent, value, font_name, width, height, top_left, text_color):
         self.parent = parent # Links to parent Property so the textbox can affect the slider
         self.value = value
-        self.text = Text(self, str(value), font_name, height, text_color, top_left)
+        self.text = Text(str(value), font_name, height, text_color, top_left)
         self.width = width
         self.height = height
         self.top_left = top_left
@@ -450,8 +450,7 @@ class Slider:
 class Text:
     """A text GUI element that can be positioned on the screen to show any text."""
 
-    def __init__(self, parent, text, font_name, size, color, top_left):
-        self.parent = parent # A link to the parent in the case that a textbox uses this text
+    def __init__(self, text, font_name, size, color, top_left):
         self.text = text
         self.font_name = font_name
         self.size = size
