@@ -2,6 +2,7 @@ import pygame
 import sys
 from pygame.math import Vector2 as Vector
 import gui
+import repel
 
 class Canvas:
     """This class takes care of drawing the window, drawing the boids, and handling window events."""
@@ -13,7 +14,7 @@ class Canvas:
         self.height = self.screen.get_height()
         self.sidebar = None
 
-        margin = 100 # settings["margin"]["value"]
+        margin = 100
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
@@ -21,10 +22,18 @@ class Canvas:
 
         self.settings = settings
         self.default_settings = default_settings
+        self.zones = []
         self.tree = None
         self.show_circles = False
         self.show_grid = False
-        self.infos = self.create_info(["TAB - Show vision and separation distance", "G - Show quad tree"],
+        self.show_zones = True
+        self.placing_zone = False
+        self.infos = self.create_info(["Tab - Toggle vision and separation visibility",
+                                       "G - Toggle quad tree visibility",
+                                       "Z - Toggle zone creation",
+                                       "  > Click to place and scroll to resize",
+                                       "Backspace - Delete all zones",
+                                       "Ctrl Z - Toggle zone visibility"],
                                      "calibri",
                                      15,
                                      (255, 255, 255))
@@ -51,6 +60,12 @@ class Canvas:
     
     def draw(self, boids):
         self.draw_background()
+        if self.show_zones:
+            for zone in self.zones:
+                zone.draw()
+        elif self.placing_zone:
+            self.zones[-1].draw()
+        
         self.draw_boids(boids)
         if self.sidebar:
             self.sidebar.draw()
@@ -104,6 +119,19 @@ class Canvas:
                 pygame.quit()
                 sys.exit()
             
+            elif event.type == pygame.MOUSEMOTION:
+                if self.placing_zone:
+                    self.zones[-1].position = Vector(pygame.mouse.get_pos())
+            
+            elif event.type == pygame.MOUSEWHEEL:
+                    if self.placing_zone and not self.sidebar.rect.collidepoint(pygame.mouse.get_pos()):
+                        self.zones[-1].radius = max(self.zones[-1].radius - event.y, 0)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0] == 1 and self.placing_zone and not self.sidebar.rect.collidepoint(pygame.mouse.get_pos()):
+                    self.zones[-1].placed = True
+                    self.placing_zone = False
+            
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
@@ -112,5 +140,17 @@ class Canvas:
                     self.show_circles = not self.show_circles # Show view circles around boids
                 elif event.key == pygame.K_g:
                     self.show_grid = not self.show_grid # Display the nodes of the quad tree
+                elif event.key == pygame.K_z and pygame.key.get_mods() and pygame.KMOD_CTRL:
+                    self.show_zones = not self.show_zones
+                elif event.key == pygame.K_z:
+                    if not self.placing_zone:
+                        self.placing_zone = True
+                        zone = repel.NoGoZone(Vector(pygame.mouse.get_pos()), 50, self.screen)
+                        self.zones.append(zone)
+                    else:
+                        self.placing_zone = False
+                        self.zones.pop()
+                elif event.key == pygame.K_BACKSPACE:
+                    self.zones = []
             
             self.sidebar.check_event(event)

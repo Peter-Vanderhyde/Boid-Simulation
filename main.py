@@ -52,6 +52,11 @@ settings = {
         "min": 0,
         "max": 0.5
     },
+    "avoid zone factor": {
+        "value": 0.003,
+        "min": 0,
+        "max": 0.1
+    },
     "turn factor": {
         "value": 0.2,
         "min": 0,
@@ -151,7 +156,7 @@ def main(width=1920, height=1080):
             else:
                 delete_boids(boids, tree, len(boids) - boid_setting)
         
-        simulation.simulate(boids, canvas.active_area, settings, tree, dt)
+        simulation.simulate(boids, canvas.active_area, settings, tree, canvas.zones, dt)
         
         canvas.draw(boids)
 

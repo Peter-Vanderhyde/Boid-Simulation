@@ -1,5 +1,5 @@
 from pygame.math import Vector2 as Vector
-from quad_tree import QuadTree
+from boid import Boid
 
 
 def get_necessary_settings(settings):
@@ -9,6 +9,7 @@ def get_necessary_settings(settings):
         "centering factor",
         "matching factor",
         "avoid factor",
+        "avoid zone factor",
         "turn factor",
         "minimum speed",
         "maximum speed"
@@ -19,7 +20,7 @@ def get_necessary_settings(settings):
     
     return values
 
-def simulate(boids, active_area, settings, tree, dt):
+def simulate(boids, active_area, settings, tree, zones, dt):
     """Simulates the movement of the boids based on the settings."""
 
     for boid in boids:
@@ -27,8 +28,9 @@ def simulate(boids, active_area, settings, tree, dt):
         neighboring_boids = 0
         average_pos = Vector(0, 0)
         average_vel = Vector(0, 0)
+        avoid_zone_vector = Vector(0, 0)
         view_distance, separation_distance, centering_factor, \
-            matching_factor, avoid_factor, turn_factor, \
+            matching_factor, avoid_factor, avoid_zone_factor, turn_factor, \
             min_speed, max_speed = get_necessary_settings(settings)
         
         boids_in_sight = tree.get_boids_in_sight(boid)
@@ -44,6 +46,13 @@ def simulate(boids, active_area, settings, tree, dt):
                     average_vel += other.velocity
                     neighboring_boids += 1
         
+        for zone in zones:
+            distance_to_other = boid.position - zone.position                
+            squared_distance = distance_to_other.x * distance_to_other.x + distance_to_other.y * distance_to_other.y
+            # Check if within radius of nogozone
+            if squared_distance < zone.radius * zone.radius:  # Is too close and needs to steer away
+                avoid_zone_vector += distance_to_other # Average all zones within range
+        
         if neighboring_boids > 0:
             # Try to match surrounding boids
             position_average = average_pos / neighboring_boids
@@ -55,6 +64,7 @@ def simulate(boids, active_area, settings, tree, dt):
                                 (velocity_average - boid.velocity) * matching_factor)
         
         boid.velocity = boid.velocity + (avoid_vector * avoid_factor)
+        boid.velocity = boid.velocity + (avoid_zone_vector * avoid_zone_factor)
 
         speed = boid.velocity.length()
         if speed == 0:
