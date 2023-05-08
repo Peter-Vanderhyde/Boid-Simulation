@@ -8,4 +8,4 @@ class NoGoZone:
         self.placed = False
     
     def draw(self):
-        pygame.draw.circle(self.screen, (255, 0, 0), self.position, self.radius, 2)
+        pygame.draw.circle(self.screen, (84, 151, 167), self.position, self.radius, 2)
