@@ -30,7 +30,7 @@ class Sidebar:
         self.text_color = text_color
         self.slider_color = slider_color
         self.font_name = "calibri"
-        self.properties = []
+        self.setting_list = []
         self.scroll_y = 0
         self.max_scroll = 0
         self.bar_height = self.s_height
@@ -56,22 +56,22 @@ class Sidebar:
     def get_scrollbar_pos(self):
         return pygame.Rect(self.rect.right - 10, self.rect.top + -self.scroll_y * self.scroll_speed, 10, self.bar_height)
     
-    def add_property(self, property_name):
-        """Add a Property segment to the sidebar."""
+    def add_setting(self, setting_name):
+        """Add a setting editor to the sidebar."""
 
-        value, min_value, max_value = self.settings[property_name].values()
+        value, min_value, max_value = self.settings[setting_name].values()
 
-        # Find the y position to place the property
-        bot_of_last_prop = self.margins[1]
-        for prop in self.properties:
-            bot_of_last_prop += prop.height
+        # Find the y position to place the setting
+        bot_of_last_setting = self.margins[1]
+        for setting in self.setting_list:
+            bot_of_last_setting += setting.height
         
-        prop = Property(property_name, self.settings, self.default_settings, self.font_name, value, min_value, max_value,
-                        Vector(self.s_width - self.width + self.margins[0], bot_of_last_prop),
+        setting = Setting(setting_name, self.settings, self.default_settings, self.font_name, value, min_value, max_value,
+                        Vector(self.s_width - self.width + self.margins[0], bot_of_last_setting),
                         text_color=self.text_color, slider_color=self.slider_color,
                         shade_color=self.scrollbar_shade_color)
-        self.properties.append(prop)
-        self.max_scroll -= prop.height
+        self.setting_list.append(setting)
+        self.max_scroll -= setting.height
         self.calculate_scrollbar_props()
     
     def scroll(self, amount):
@@ -89,7 +89,7 @@ class Sidebar:
                          self.get_scrollbar_pos(), 1, border_radius=20)
     
     def draw(self):
-        """Draws the sidebar and all its property elements on the right."""
+        """Draws the sidebar and all its setting elements on the right."""
 
         if self.last_scroll_pos != None: # Scrollbar is currently being dragged
             mouse_pos = pygame.mouse.get_pos()
@@ -101,9 +101,9 @@ class Sidebar:
         pygame.draw.rect(self.screen, self.bg_color, (width - self.width, 0, self.width, height),
                          border_top_left_radius=15, border_bottom_left_radius=15)
 
-        # Draw properties
-        for prop in self.properties:
-            prop.draw(self.screen, self.scroll_y)
+        # Draw settings
+        for setting in self.setting_list:
+            setting.draw(self.screen, self.scroll_y)
         
         self.draw_scrollbar()
         # Outline
@@ -126,39 +126,39 @@ class Sidebar:
                 
                 self.selected_textbox = None
                 self.selected_slider = None
-                for prop in self.properties:
-                    if get_offset_rect(prop.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
-                        self.selected_textbox = prop.textbox # Selected a textbox
-                        if prop.textbox.selected:
+                for setting in self.setting_list:
+                    if get_offset_rect(setting.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                        self.selected_textbox = setting.textbox # Selected a textbox
+                        if setting.textbox.selected:
                              # Second time clicking the textbox, so remove highlight of text
-                             prop.textbox.highlighted = False
+                             setting.textbox.highlighted = False
                         else:
                             # First click, so select and highlight
-                            prop.textbox.selected = True
-                            prop.textbox.highlighted = True
-                    elif get_offset_rect(Rect(prop.slider.rect.left - 5,
-                                              prop.slider.rect.top,
-                                              prop.slider.rect.width + 10,
-                                              prop.slider.rect.height),
+                            setting.textbox.selected = True
+                            setting.textbox.highlighted = True
+                    elif get_offset_rect(Rect(setting.slider.rect.left - 5,
+                                              setting.slider.rect.top,
+                                              setting.slider.rect.width + 10,
+                                              setting.slider.rect.height),
                                         Vector(0, self.scroll_y)).collidepoint(mouse_pos):
-                        prop.textbox.selected = False
-                        prop.textbox.highlighted = False
-                        self.selected_slider = prop.slider # Selected a slider
+                        setting.textbox.selected = False
+                        setting.textbox.highlighted = False
+                        self.selected_slider = setting.slider # Selected a slider
                         self.last_slider_pos = mouse_pos
-                    elif get_offset_rect(prop.button.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
-                        button = prop.button
+                    elif get_offset_rect(setting.button.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                        button = setting.button
                         if button.active:
-                            self.settings[prop.name]['value'] = self.default_settings[prop.name]['value']
-                            prop.textbox.set_value(str(self.settings[prop.name]["value"]))
-                            prop.textbox.apply_value(self.settings)
+                            self.settings[setting.name]["value"] = self.default_settings[setting.name]["value"]
+                            setting.textbox.set_value(str(self.settings[setting.name]["value"]))
+                            setting.textbox.apply_value(self.settings)
                             button.active = False
                     else:
-                        if prop.textbox.selected:
+                        if setting.textbox.selected:
                             # User clicked outside textbox, so apply the input value
-                            prop.textbox.apply_value(self.settings)
+                            setting.textbox.apply_value(self.settings)
                         
-                        prop.textbox.selected = False
-                        prop.textbox.highlighted = False
+                        setting.textbox.selected = False
+                        setting.textbox.highlighted = False
         
         elif event.type == MOUSEBUTTONUP:
             # Release the slider
@@ -184,7 +184,7 @@ class Sidebar:
                     self.selected_textbox.check_typing_event(event)
 
 
-class Property:
+class Setting:
     """A sidebar element consisting of a title, textbox, and slider."""
 
     def __init__(self, name, settings, default_settings, font_name, value, min_value, max_value, top_left, text_color, slider_color, shade_color):
@@ -207,8 +207,8 @@ class Property:
         self.create_textbox(top_left + Vector(0, self.title.rect.height + 2))
         self.create_slider(top_left + Vector(0, self.title.rect.height + self.textbox.rect.height + 4))
         self.create_button()
-        prop_y_margins = 15 # Spacing between each property
-        self.height = prop_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
+        setting_y_margins = 15 # Spacing between each setting
+        self.height = setting_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
     def create_title(self, top_left):
         title = Text(self.name.capitalize(), self.font_name, 15, self.text_color, top_left)
@@ -237,7 +237,7 @@ class Property:
         return [tuple([reduce(c) for c in color]), tuple([increase(c) for c in color])]
 
     def update_button(self):
-        if self.settings[self.name]['value'] == self.default_settings[self.name]['value']:
+        if self.settings[self.name]["value"] == self.default_settings[self.name]["value"]:
             self.button.active = False
         else:
             self.button.active = True
@@ -286,7 +286,7 @@ class TextBox:
     whatever number value they want."""
 
     def __init__(self, parent, value, font_name, width, height, top_left, text_color):
-        self.parent = parent # Links to parent Property so the textbox can affect the slider
+        self.parent = parent # Links to parent Setting so the textbox can affect the slider
         self.value = value
         self.text = Text(str(value), font_name, height, text_color, top_left)
         self.width = width
@@ -312,13 +312,13 @@ class TextBox:
         self.value = self.value or "0"
         value = float(self.value) or 0.0 # Default the value to 0 if there's no value
         setting = settings[self.parent.name]
-        setting['value'] = min(setting['max'], max(setting['min'], value)) # Make sure within bounds
-        if setting['value'] == int(setting['value']): # Doesn't need to show decimals
-            self.set_value(str(int(setting['value'])))
+        setting["value"] = min(setting["max"], max(setting["min"], value)) # Make sure within bounds
+        if setting["value"] == int(setting["value"]): # Doesn't need to show decimals
+            self.set_value(str(int(setting["value"])))
         else:
-            self.set_value(str(setting['value']))
+            self.set_value(str(setting["value"]))
         
-        self.parent.slider.set_value(setting['value'])
+        self.parent.slider.set_value(setting["value"])
         self.parent.update_button()
     
     def check_typing_event(self, event):
@@ -334,8 +334,8 @@ class TextBox:
         
         # Checks if number or - or . and in the right context
         elif event.dict["unicode"].isdigit() or \
-                (event.dict["unicode"] == '.' and '.' not in self.value) or \
-                ((self.value == "" or self.highlighted) and event.dict['unicode'] == '-'):
+                (event.dict["unicode"] == "." and "." not in self.value) or \
+                ((self.value == "" or self.highlighted) and event.dict["unicode"] == "-"):
 
             if self.highlighted:
                 # Replace the previous value with the input char
@@ -377,7 +377,7 @@ class Slider:
     """A slider that allows the user to set a value between two values by moving the slider."""
 
     def __init__(self, parent, value, min_val, max_val, width, height, top_left, slider_color, text_color):
-        self.parent = parent # Link to parent Property for changing the settings and textbox
+        self.parent = parent # Link to the parent setting for changing the settings and textbox
         self.value = value
         self.min_val = min_val
         self.max_val = max_val
@@ -416,8 +416,8 @@ class Slider:
         """Changes the settings and also the textbox value."""
 
         setting = settings[self.parent.name]
-        setting['value'] = round(self.value, 4)
-        self.parent.textbox.set_value(str(setting['value']))
+        setting["value"] = round(self.value, 4)
+        self.parent.textbox.set_value(str(setting["value"]))
         self.parent.update_button()
     
     def update_pos(self, pos):

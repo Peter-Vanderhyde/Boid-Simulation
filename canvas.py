@@ -8,13 +8,15 @@ class Canvas:
     """This class takes care of drawing the window, drawing the boids, and handling window events."""
 
     def __init__(self, width, height, bg_color, settings, default_settings):
+        pygame.display.set_caption("Boid Simulation")
         self.screen = pygame.display.set_mode((width, height)) # Create window
         self.bg_color = bg_color
         self.width = self.screen.get_width()
         self.height = self.screen.get_height()
         self.sidebar = None
 
-        margin = 100
+        margin = 100 # The margin around the active simulation area where the boids will turn around
+
         # Create rectangle area the boids will try to stay within
         # ((corner_x, corner_y), (width, height))
         self.active_area = ((margin, margin),
@@ -28,37 +30,47 @@ class Canvas:
         self.show_grid = False
         self.show_zones = True
         self.placing_zone = False
+        # Info that is displayed in the top left of the screen
         self.infos = self.create_info(["Tab - Toggle vision and separation visibility",
                                        "G - Toggle quad tree visibility",
                                        "Z - Toggle zone creation",
                                        "  > Click to place and scroll to resize",
-                                       "Backspace - Delete all placed zones",
+                                       "Delete - Delete all placed zones",
                                        "Ctrl Z - Toggle zone visibility"],
                                      "calibri",
                                      15,
                                      (255, 255, 255))
     
     def create_sidebar(self, width, margins=(0, 0), bg_color=(100, 100, 100), text_color=(0, 0, 0), slider_color=(150, 150, 150)):
-        def check(color):
-            return max(color - 30, 0)
+        """This function creates the sidebar based on the passed in properties."""
+
+        def create_accent(color):
+            # Returns a darkened color that is valid
+            return [max(rgb - 30, 0) for rgb in color]
         
         self.sidebar = gui.Sidebar(self.screen, width, margins, self.settings, self.default_settings,
                                    bg_color=bg_color,
-                                   scrollbar_shade=(check(bg_color[0]), check(bg_color[1]), check(bg_color[2])),
+                                   scrollbar_shade=(create_accent(bg_color)),
                                    text_color=text_color,
                                    slider_color=slider_color)
         margin = self.active_area[0][0]
+        # Remake the simulation zone to account for sidebar taking up space
         self.active_area = ((margin, margin),
                     (self.width - width - margin * 2, self.height - margin * 2))
     
     def create_info(self, info_texts, font_name, size, color):
+        """This creates and positions text in the top left of the window."""
+
         infos = []
         for index, text in enumerate(info_texts):
+            # Stacks the text
             infos.append(gui.Text(text, font_name, size, color, Vector(5, 5 + size * index)))
         
         return infos
     
     def draw(self, boids):
+        """This draws each element of the window in order."""
+
         self.draw_background()
         if self.show_zones:
             for zone in self.zones:
@@ -73,7 +85,8 @@ class Canvas:
         self.draw_info()
     
     def draw_background(self):
-        """Fills the screen with the background color and draws a square for the active area."""
+        """Fills the screen with the background color and draws a square for the active area.
+        It also draws the grid of the quad tree if toggled to visible."""
 
         self.screen.fill(self.bg_color)
         if self.show_grid:
@@ -87,13 +100,14 @@ class Canvas:
 
         size = self.settings["boid size"]["value"]
         for boid in boids:
-            if boid.velocity.length() == 0:
+            if boid.velocity.length() == 0: # It has no direction to point
                 direction = Vector(0, 1)
             else:
                 direction = boid.velocity.normalize()
             
             perpendicular = Vector(direction.y, -direction.x)
             perpendicular /= 2
+            # Calculate polygon positions
             point_1 = boid.position + direction * size
             point_2 = boid.position - direction * size + perpendicular * size
             point_3 = boid.position - direction * size - perpendicular * size
@@ -108,6 +122,8 @@ class Canvas:
                 pygame.draw.circle(self.screen, (255, 150, 150), list(boid.position), self.settings["separation distance"]["value"], 1)
     
     def draw_info(self):
+        """Draws the text in the top left of the screen."""
+
         for info in self.infos:
             info.draw(self.screen)
     
@@ -128,6 +144,7 @@ class Canvas:
                         self.zones[-1].radius = max(self.zones[-1].radius - event.y, 0)
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Make sure they are trying to place a zone and not clicking a UI element
                 if pygame.mouse.get_pressed()[0] == 1 and self.placing_zone and not self.sidebar.rect.collidepoint(pygame.mouse.get_pos()):
                     self.zones[-1].placed = True
                     self.placing_zone = False
@@ -137,9 +154,11 @@ class Canvas:
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_TAB:
-                    self.show_circles = not self.show_circles # Show view circles around boids
+                    # Show view circles around boids
+                    self.show_circles = not self.show_circles
                 elif event.key == pygame.K_g:
-                    self.show_grid = not self.show_grid # Display the nodes of the quad tree
+                    # Display the nodes of the quad tree
+                    self.show_grid = not self.show_grid
                 elif event.key == pygame.K_z and pygame.key.get_mods() and pygame.KMOD_CTRL:
                     self.show_zones = not self.show_zones
                 elif event.key == pygame.K_z:
@@ -150,10 +169,11 @@ class Canvas:
                     else:
                         self.placing_zone = False
                         self.zones.pop()
-                elif event.key == pygame.K_BACKSPACE:
+                elif event.key == pygame.K_DELETE:
                     if self.placing_zone:
                         self.zones = [self.zones[-1]]
                     else:
                         self.zones = []
             
+            # Check for events that apply to the UI elements
             self.sidebar.check_event(event)

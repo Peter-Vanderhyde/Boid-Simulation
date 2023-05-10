@@ -1,5 +1,5 @@
 from pygame.math import Vector2 as Vector
-from boid import Boid
+from main import create_boids
 
 
 def get_necessary_settings(settings):
@@ -22,6 +22,8 @@ def get_necessary_settings(settings):
 
 def simulate(boids, active_area, settings, tree, zones, dt):
     """Simulates the movement of the boids based on the settings."""
+
+    reinsert = 0
 
     for boid in boids:
         avoid_vector = Vector(0, 0)
@@ -90,4 +92,10 @@ def simulate(boids, active_area, settings, tree, zones, dt):
             boid.velocity.x -= turn_factor
         
 
-        tree.adjust_boid_position(boid, dt)
+        try:
+            tree.adjust_boid_position(boid, dt)
+        except RuntimeError:
+            boids.remove(boid)
+            reinsert += 1
+    
+    return reinsert

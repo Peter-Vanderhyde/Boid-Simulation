@@ -56,15 +56,15 @@ class TestQuadTreeMethods(unittest.TestCase):
         self.tree.insert_node(n2)
         self.tree.divide()
         with self.subTest("BR child not created."):
-            child = self.tree.children['br']
+            child = self.tree.children["br"]
             self.assertTrue(child and child.nodes == [n1])
         
         with self.subTest("BL child not created."):
-            child = self.tree.children['bl']
+            child = self.tree.children["bl"]
             self.assertTrue(child and child.nodes == [n2])
         
         with self.subTest("TL and TR are not empty."):
-            self.assertFalse(self.tree.children['tl'] or self.tree.children['tr'])
+            self.assertFalse(self.tree.children["tl"] or self.tree.children["tr"])
         
         with self.subTest("Root not empty."):
             self.assertTrue(self.tree.nodes == [] and self.tree.node_count == 2)
@@ -90,7 +90,7 @@ class TestQuadTreeMethods(unittest.TestCase):
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, -10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(-10, -10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(100, 100))))
-        self.assertEqual(self.tree.children['br'].node_count, 2)
+        self.assertEqual(self.tree.children["br"].node_count, 2)
     
     def test_6_quad_reabsorb(self):
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, 10))))
@@ -98,7 +98,7 @@ class TestQuadTreeMethods(unittest.TestCase):
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, -10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(-10, -10))))
         with self.subTest("Did not create child."):
-            self.assertTrue(self.tree.children['br'].node_count == 2 and self.tree.nodes == [])
+            self.assertTrue(self.tree.children["br"].node_count == 2 and self.tree.nodes == [])
 
         self.tree.reabsorb()        
         with self.subTest("Nodes were not reabsorbed."):
@@ -166,5 +166,5 @@ class TestQuadTreeMethods(unittest.TestCase):
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

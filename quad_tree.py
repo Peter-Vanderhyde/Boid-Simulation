@@ -149,7 +149,6 @@ class QuadTree:
 
         if self.parent == None and not self.node_within_bounds(n): # In the root
             # The node is outside of the area of the tree.
-            print(self.tl_corner, self.br_corner, n.boid.position)
             raise RuntimeError("Node outside of tree boundaries.")
 
         if self.leaf:
@@ -358,7 +357,7 @@ class QuadTree:
             pygame.draw.rect(screen, (255, 0, 0), (self.tl_corner, self.br_corner - self.tl_corner + Vector(1, 1)), 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import pygame
     import sys
     from pygame.locals import *

@@ -26,7 +26,7 @@ To start the project, run the ***main.py*** python file.
   * Click to place to zone in a location.
   * Press Z again before placing the zone to cancel the zone creation.
 - Ctrl+Z - This will toggle the visibility of the zone outline.
-- Backspace - This will delete all placed zones
+- Delete - This will delete all placed zones
 
 ## Settings
 The sidebar contains several settings that can be adjusted in real time to see the affects.
