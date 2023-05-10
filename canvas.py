@@ -32,7 +32,7 @@ class Canvas:
                                        "G - Toggle quad tree visibility",
                                        "Z - Toggle zone creation",
                                        "  > Click to place and scroll to resize",
-                                       "Backspace - Delete all zones",
+                                       "Backspace - Delete all placed zones",
                                        "Ctrl Z - Toggle zone visibility"],
                                      "calibri",
                                      15,
@@ -151,6 +151,9 @@ class Canvas:
                         self.placing_zone = False
                         self.zones.pop()
                 elif event.key == pygame.K_BACKSPACE:
-                    self.zones = []
+                    if self.placing_zone:
+                        self.zones = [self.zones[-1]]
+                    else:
+                        self.zones = []
             
             self.sidebar.check_event(event)
