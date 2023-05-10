@@ -23,7 +23,15 @@ To start the project, run the ***main.py*** python file.
 - G - This key display all the quadrants of the quad tree.
 
 ## Custom Settings
-In order to add custom settings to the sidebar that can be used within the code, the setting can easily be added within ***main.py***. Inside the settings dictionary, add the name of the setting then give it a default value, a minimum value, and a maximum value. To access the setting in the code: 
+In order to add custom settings to the sidebar that can be used within the code, the setting can easily be added within ***main.py***. Inside the settings dictionary, add the name of the setting then give it a default value, a minimum value, and a maximum value.
+```python
+"setting name": {
+    "value": 15,
+    "min": 1,
+    "max": 50
+}
+```
+To access the setting in the code: 
 ``` python
-setting = settings[<setting_name>]["value"]
+setting = settings["setting name"]["value"]
 ```
