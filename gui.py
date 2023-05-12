@@ -116,6 +116,13 @@ class Sidebar:
         self.draw_scrollbar()
         # Black outline
         pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1, border_top_left_radius=15, border_bottom_left_radius=15)
+    
+    def overlaps(self, rect, mouse_pos):
+        """Used for checking if mouse events overlap UI elements."""
+
+        # Move the element rect by the scroll amount
+        offset_rect = get_offset_rect(rect, Vector(0, self.scroll_y))
+        return offset_rect.collidepoint(mouse_pos)
 
     def check_event(self, event):
         """Handle any mouse events that occured within the sidebar."""
@@ -135,7 +142,7 @@ class Sidebar:
                 self.selected_textbox = None
                 self.selected_slider = None
                 for setting in self.setting_list:
-                    if get_offset_rect(setting.textbox.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                    if self.overlaps(setting.textbox.rect, mouse_pos):
                         self.selected_textbox = setting.textbox # Selected a textbox
                         if setting.textbox.selected:
                              # Second time clicking the textbox, so remove highlight of text
@@ -144,16 +151,16 @@ class Sidebar:
                             # First click, so select and highlight
                             setting.textbox.selected = True
                             setting.textbox.highlighted = True
-                    elif get_offset_rect(Rect(setting.slider.rect.left - 5,
+                    elif self.overlaps(Rect(setting.slider.rect.left - 5,
                                               setting.slider.rect.top,
                                               setting.slider.rect.width + 10,
                                               setting.slider.rect.height),
-                                        Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                                        mouse_pos):
                         setting.textbox.selected = False
                         setting.textbox.highlighted = False
                         self.selected_slider = setting.slider # Selected a slider
                         self.last_slider_pos = mouse_pos
-                    elif get_offset_rect(setting.button.rect, Vector(0, self.scroll_y)).collidepoint(mouse_pos):
+                    elif self.overlaps(setting.button.rect, mouse_pos):
                         button = setting.button
                         if button.active:
                             self.settings[setting.name]["value"] = self.default_settings[setting.name]["value"]
