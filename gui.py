@@ -5,7 +5,7 @@ from pygame.math import Vector2 as Vector
 
     
 def get_offset_rect(rect, offset):
-    """This gives a rect that has been offset some amount.
+    """This returns a rect that is offset from the original rect.
     It's useful for scrolling items up and down."""
 
     return pygame.Rect(rect.left + offset.x, rect.top + offset.y,
@@ -15,14 +15,14 @@ def get_offset_rect(rect, offset):
 class Sidebar:
     """This is the entire bar on the side that contains all of the gui elements."""
 
-    def __init__(self, screen, width, margins, settings, default_setting, bg_color=(100, 100, 100), scrollbar_shade=(150, 150, 150),
-                 text_color=(0, 0, 0), slider_color=(150, 150, 150)):
+    def __init__(self, screen, width, margins, settings, default_setting, bg_color=(100, 100, 100),
+                 scrollbar_shade=(150, 150, 150), text_color=(0, 0, 0), slider_color=(150, 150, 150)):
         self.screen = screen
-        self.s_width = screen.get_width()
-        self.s_height = screen.get_height()
-        self.width = width
-        self.rect = pygame.Rect(self.s_width - width, 0, width, self.s_height)
-        self.margins = margins # TODO I need to make this responsive
+        self.screen_width = screen.get_width()
+        self.screen_height = screen.get_height()
+        self.width = width # The width of the sidebar
+        self.rect = pygame.Rect(self.screen_width - width, 0, width, self.screen_height)
+        self.margins = margins # Margins to pad the sidebar elements
         self.settings = settings
         self.default_settings = default_setting
         self.bg_color = bg_color
@@ -33,9 +33,9 @@ class Sidebar:
         self.setting_list = []
         self.scroll_y = 0
         self.max_scroll = 0
-        self.bar_height = self.s_height
+        self.bar_height = self.screen_height
         self.scroll_speed = 1
-        self.bar_rect = pygame.Rect(self.s_width - 10, 0, 10, self.bar_height)
+        self.bar_rect = pygame.Rect(self.screen_width - 10, 0, 10, self.bar_height)
         self.last_scroll_pos = None
         self.selected_textbox = None
         self.selected_slider = None
@@ -46,7 +46,10 @@ class Sidebar:
 
         full_height = self.rect.height
         scroll_percent = -self.max_scroll / full_height
-        if scroll_percent > 0.99: # Needs to scroll too far, so change the scroll speed, not the size
+        # If the bar contents are more than the height of the window
+        # itself, we can't shrink the scrollbar any more.
+        # Instead, change the speed that the scrollbar moves
+        if scroll_percent > 0.99: # Change speed
             self.bar_height = 30
             self.scroll_speed = (full_height - self.bar_height) / -self.max_scroll 
         else:
@@ -54,10 +57,12 @@ class Sidebar:
             self.scroll_speed = 1
     
     def get_scrollbar_pos(self):
+        """Returns the rect of the scrollbar at the correct scroll position."""
+
         return pygame.Rect(self.rect.right - 10, self.rect.top + -self.scroll_y * self.scroll_speed, 10, self.bar_height)
     
     def add_setting(self, setting_name):
-        """Add a setting editor to the sidebar."""
+        """Add a setting to the sidebar."""
 
         value, min_value, max_value = self.settings[setting_name].values()
 
@@ -67,20 +72,23 @@ class Sidebar:
             bot_of_last_setting += setting.height
         
         setting = Setting(setting_name, self.settings, self.default_settings, self.font_name, value, min_value, max_value,
-                        Vector(self.s_width - self.width + self.margins[0], bot_of_last_setting),
+                        Vector(self.screen_width - self.width + self.margins[0], bot_of_last_setting),
                         text_color=self.text_color, slider_color=self.slider_color,
                         shade_color=self.scrollbar_shade_color)
         self.setting_list.append(setting)
         self.max_scroll -= setting.height
-        self.calculate_scrollbar_props()
+        self.calculate_scrollbar_props() # Adjust the scrollbar
     
     def scroll(self, amount):
         """Called when scrolling the mouse."""
         
         self.scroll_y += amount
+        # Prevent scrolling beyond bounds
         self.scroll_y = max(self.max_scroll, min(0, self.scroll_y))
     
     def draw_scrollbar(self):
+        """Draws the scrollbar and the scrollbar groove."""
+
         pygame.draw.rect(self.screen, self.scrollbar_shade_color,
                          (self.rect.right - 10, self.rect.top, 10, self.rect.height), border_radius=20)
         pygame.draw.rect(self.screen, self.bg_color,
@@ -93,10 +101,10 @@ class Sidebar:
 
         if self.last_scroll_pos != None: # Scrollbar is currently being dragged
             mouse_pos = pygame.mouse.get_pos()
-            self.scroll(self.last_scroll_pos[1] - mouse_pos[1])
+            self.scroll(self.last_scroll_pos[1] - mouse_pos[1]) # Move scrollbar to new position
             self.last_scroll_pos = mouse_pos
         
-        # Scrollbar background
+        # Sidebar background
         width, height = self.screen.get_size()
         pygame.draw.rect(self.screen, self.bg_color, (width - self.width, 0, self.width, height),
                          border_top_left_radius=15, border_bottom_left_radius=15)
@@ -106,14 +114,14 @@ class Sidebar:
             setting.draw(self.screen, self.scroll_y)
         
         self.draw_scrollbar()
-        # Outline
+        # Black outline
         pygame.draw.rect(self.screen, (0, 0, 0), self.rect, 1, border_top_left_radius=15, border_bottom_left_radius=15)
 
     def check_event(self, event):
         """Handle any mouse events that occured within the sidebar."""
 
         if event.type == MOUSEWHEEL:
-            if self.rect.collidepoint(pygame.mouse.get_pos()): # Overlaps sidebar
+            if self.rect.collidepoint(pygame.mouse.get_pos()): # Overlaps sidebar, so allow it to scroll
                 self.scroll(event.y * 10)
 
         elif event.type == MOUSEBUTTONDOWN:
