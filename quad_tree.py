@@ -29,13 +29,15 @@ class QuadTree:
         self.min_nodes = min_nodes # Node number at which a parent will reabsorb its kids' nodes
         self.node_count = len(nodes) # The number of total nodes whithin all children combined
         self.leaf = True
-        self.tl_corner = top_left
+        self.tl_corner = top_left # The extreme corners of the tree
         self.br_corner = bottom_right
         self.center = Vector((self.tl_corner.x + self.br_corner.x) // 2, (self.tl_corner.y + self.br_corner.y) // 2)
         self.rect = Rect(top_left, bottom_right - top_left)
         self.clear_children()
     
     def clear_children(self):
+        """All children are removed."""
+
         self.children = {
             "tl":None,
             "tr":None,
@@ -44,13 +46,17 @@ class QuadTree:
         }
     
     def remove_boid(self, boid):
+        """Creates a node from a given boid and is used to remove that boid from the tree."""
+
         self.remove_node(Node(boid))
     
     def insert_boid(self, boid):
+        """Creates a node based off the given boid to insert in the tree."""
+
         self.insert_node(Node(boid))
     
     def get_child(self, string):
-        """Returns the child tree object based on the given child string."""
+        """Returns the child tree object based on the given child string [bl,br,tl,tr]."""
 
         try:
             return self.children[string]
@@ -58,12 +64,19 @@ class QuadTree:
             raise RuntimeError(f"Unable to retrieve child with the string '{string}'.")
 
     def set_child(self, string, tree):
-        """Sets the child tree object of the given child string."""
+        """Sets the child tree object of the given child string. Can be None."""
 
         if tree is None or type(tree) == QuadTree:
             self.children[string] = tree
         else:
             raise TypeError("Attempted to set child as non quadtree type.")
+    
+    def node_within_bounds(self, n):
+        """Returns bool of whether node is within the current node's coordinate bounds."""
+
+        tx, ty = self.tl_corner
+        bx, by = self.br_corner
+        return tx <= n.x <= bx and ty <= n.y <= by
     
     def find_child_string_for_node(self, n):
         """Returns the string of which child quad the node is inside."""
@@ -139,13 +152,17 @@ class QuadTree:
     def insert_node(self, n):
         """Finds the correct leaf to place the given node into."""
 
+        if self.parent == None and not self.node_within_bounds(n): # In the root
+            # The node is outside of the area of the tree.
+            raise RuntimeError("Node outside of tree boundaries.")
+
         if self.leaf:
             self.nodes.append(n)
             self.node_count += 1
+            # Check if needs/can subdivide
             if len(self.nodes) > self.max_nodes and\
                     abs(self.tl_corner.x - self.br_corner.x) >= 4 and\
                     abs(self.tl_corner.y - self.br_corner.y) >= 4: # There's room for more subtrees
-                # The node has too many objects, so it will subdivide
                 self.divide()
         else:
             child_string = self.find_child_string_for_node(n)
@@ -157,6 +174,8 @@ class QuadTree:
                 child.insert_node(n)
             
             self.node_count += 1
+            # Keeps track of number of nodes in children too in case
+            # it needs to reabsorb them.
     
     def get_all_leaves(self):
         """Finds all of the leaves' nodes within itself/its children."""
@@ -172,7 +191,7 @@ class QuadTree:
             return leaves
     
     def reabsorb(self):
-        """Finds every node in its children, at makes itself a leaf to hold them, and deletes its children."""
+        """Finds every node in its children, it makes itself a leaf to hold them, and deletes its children."""
 
         self.nodes = self.get_all_leaves()
         self.clear_children()
@@ -205,7 +224,7 @@ class QuadTree:
                 self.reabsorb()
     
     def get_possible_nodes(self, check_rect):
-        """Based on a given Rect, find all nodes who overlap with that rect, as
+        """Based on a given Rect, find all quads who overlap with that rect, as
         they may contain nodes within the Rect."""
 
         if self.leaf:
@@ -233,7 +252,7 @@ class QuadTree:
     
     def get_boids_in_sight(self, boid):
         """This finds all boids within sight of this boid based on the boids'
-        position and view distance."""
+        position and view radius."""
 
         nodes = self.find_points_in_radius(boid.position,
                                            max(boid.settings["view distance"]["value"],
@@ -254,7 +273,9 @@ class QuadTree:
         if outside_tree_bounds:
             # Quick dirty fix
             boid.velocity *= -1 # Reverse the velocity
-            boid.position += boid.velocity * dt * 60 # Move the boid back within the bounds of the tree
+            # Move the boid back within the bounds of the tree
+            boid.position.x = min(max(boid.position.x, self.tl_corner.x + 10), self.br_corner.x - 10)
+            boid.position.y = min(max(boid.position.y, self.tl_corner.y + 10), self.br_corner.y - 10)
             self.insert_boid(boid)
     
     def update_node(self, n):
@@ -318,7 +339,7 @@ class QuadTree:
     def draw_grid(self, screen):
         """For display the node quadrants on the simulation screen."""
 
-        pygame.draw.rect(screen, (150, 150, 150), (self.rect.left,
+        pygame.draw.rect(screen, (255, 255, 255), (self.rect.left,
                                                    self.rect.top, 
                                                    self.rect.width + 1,
                                                    self.rect.height + 1), 1)
@@ -343,7 +364,7 @@ class QuadTree:
             pygame.draw.rect(screen, (255, 0, 0), (self.tl_corner, self.br_corner - self.tl_corner + Vector(1, 1)), 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import pygame
     import sys
     from pygame.locals import *
@@ -377,7 +398,7 @@ if __name__ == '__main__':
             elif event.type == MOUSEBUTTONDOWN:
                 # Add a boid at the position of the click
                 pos = Vector(pygame.mouse.get_pos())
-                boid = Boid(pos, Vector(0, 1), None)
+                boid = Boid({}, pos)
                 success = tree.insert_boid(boid)
                 boids.append(boid)
 

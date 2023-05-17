@@ -1,14 +1,17 @@
 from pygame.math import Vector2 as Vector
-from quad_tree import QuadTree
+from main import create_boids
 
 
 def get_necessary_settings(settings):
+    """Helps to get the values of all of the many settings."""
+
     find_keys = [
         "view distance",
         "separation distance",
         "centering factor",
         "matching factor",
         "avoid factor",
+        "avoid zone factor",
         "turn factor",
         "minimum speed",
         "maximum speed"
@@ -19,21 +22,24 @@ def get_necessary_settings(settings):
     
     return values
 
-def simulate(boids, active_area, settings, tree, dt):
+def simulate(boids, active_area, settings, tree, zones, dt):
     """Simulates the movement of the boids based on the settings."""
+
+    reinsert = 0
 
     for boid in boids:
         avoid_vector = Vector(0, 0)
         neighboring_boids = 0
         average_pos = Vector(0, 0)
         average_vel = Vector(0, 0)
+        avoid_zone_vector = Vector(0, 0)
         view_distance, separation_distance, centering_factor, \
-            matching_factor, avoid_factor, turn_factor, \
+            matching_factor, avoid_factor, avoid_zone_factor, turn_factor, \
             min_speed, max_speed = get_necessary_settings(settings)
         
         boids_in_sight = tree.get_boids_in_sight(boid)
         for other in boids_in_sight:
-            if other is not boid:
+            if other is not boid: # It's not itself
                 distance_to_other = boid.position - other.position                
                 squared_distance = distance_to_other.x * distance_to_other.x + distance_to_other.y * distance_to_other.y
                 # Testing squared distances because it's faster than using sqrt
@@ -43,6 +49,13 @@ def simulate(boids, active_area, settings, tree, dt):
                     average_pos += other.position
                     average_vel += other.velocity
                     neighboring_boids += 1
+        
+        for zone in zones:
+            distance_to_other = boid.position - zone.position                
+            squared_distance = distance_to_other.x * distance_to_other.x + distance_to_other.y * distance_to_other.y
+            # Check if within radius of nogozone
+            if squared_distance < zone.radius * zone.radius:  # Is too close and needs to steer away
+                avoid_zone_vector += distance_to_other # Average all zones within range
         
         if neighboring_boids > 0:
             # Try to match surrounding boids
@@ -54,11 +67,15 @@ def simulate(boids, active_area, settings, tree, dt):
                                 (position_average - boid.position) * centering_factor +
                                 (velocity_average - boid.velocity) * matching_factor)
         
+        # Push away from avoidences
         boid.velocity = boid.velocity + (avoid_vector * avoid_factor)
+        boid.velocity = boid.velocity + (avoid_zone_vector * avoid_zone_factor)
 
         speed = boid.velocity.length()
         if speed == 0:
+            # Don't want a vector of 0
             speed = 0.0001
+        
         # Clamp speed
         if speed > max_speed:
             boid.velocity.x = (boid.velocity.x / speed) * max_speed
@@ -80,4 +97,11 @@ def simulate(boids, active_area, settings, tree, dt):
             boid.velocity.x -= turn_factor
         
 
-        tree.adjust_boid_position(boid, dt)
+        try:
+            tree.adjust_boid_position(boid, dt)
+        except RuntimeError:
+            # Boid managed to get outside of tree bounds
+            boids.remove(boid)
+            reinsert += 1 # Tell it to create a new boid somewhere to make up for it
+    
+    return reinsert
