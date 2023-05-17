@@ -3,6 +3,8 @@ from main import create_boids
 
 
 def get_necessary_settings(settings):
+    """Helps to get the values of all of the many settings."""
+
     find_keys = [
         "view distance",
         "separation distance",
@@ -37,7 +39,7 @@ def simulate(boids, active_area, settings, tree, zones, dt):
         
         boids_in_sight = tree.get_boids_in_sight(boid)
         for other in boids_in_sight:
-            if other is not boid:
+            if other is not boid: # It's not itself
                 distance_to_other = boid.position - other.position                
                 squared_distance = distance_to_other.x * distance_to_other.x + distance_to_other.y * distance_to_other.y
                 # Testing squared distances because it's faster than using sqrt
@@ -65,12 +67,15 @@ def simulate(boids, active_area, settings, tree, zones, dt):
                                 (position_average - boid.position) * centering_factor +
                                 (velocity_average - boid.velocity) * matching_factor)
         
+        # Push away from avoidences
         boid.velocity = boid.velocity + (avoid_vector * avoid_factor)
         boid.velocity = boid.velocity + (avoid_zone_vector * avoid_zone_factor)
 
         speed = boid.velocity.length()
         if speed == 0:
+            # Don't want a vector of 0
             speed = 0.0001
+        
         # Clamp speed
         if speed > max_speed:
             boid.velocity.x = (boid.velocity.x / speed) * max_speed
@@ -95,7 +100,8 @@ def simulate(boids, active_area, settings, tree, zones, dt):
         try:
             tree.adjust_boid_position(boid, dt)
         except RuntimeError:
+            # Boid managed to get outside of tree bounds
             boids.remove(boid)
-            reinsert += 1
+            reinsert += 1 # Tell it to create a new boid somewhere to make up for it
     
     return reinsert
