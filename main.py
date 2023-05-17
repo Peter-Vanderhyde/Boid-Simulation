@@ -134,7 +134,7 @@ def main(width=1920, height=1080):
     canvas = Canvas(width, height, (27, 32, 33), settings, default_settings) # The canvas handles drawing and events
     canvas.create_sidebar(width=250,
                           margins=(10, 10),
-                          bg_color=(166, 168, 103),
+                          bg_color=(206, 208, 143),
                           text_color=(81, 81, 61),
                           slider_color=(227, 220, 149))
     for key in settings.keys():

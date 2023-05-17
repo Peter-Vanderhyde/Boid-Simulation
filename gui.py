@@ -135,7 +135,7 @@ class Sidebar:
             if pygame.mouse.get_pressed()[0]: # Left button pressed
                 mouse_pos = pygame.mouse.get_pos()
                 if self.get_scrollbar_pos().collidepoint(mouse_pos): # Clicked the scrollbar
-                    self.last_scroll_pos = mouse_pos
+                    self.last_scroll_pos = mouse_pos # Begin tracking dragged scrollbar
                 else:
                     self.last_scroll_pos = None # De-select scrollbar
                 
@@ -163,6 +163,7 @@ class Sidebar:
                     elif self.overlaps(setting.button.rect, mouse_pos):
                         button = setting.button
                         if button.active:
+                            # Set the current setting value to the default
                             self.settings[setting.name]["value"] = self.default_settings[setting.name]["value"]
                             setting.textbox.set_value(str(self.settings[setting.name]["value"]))
                             setting.textbox.apply_value(self.settings)
@@ -176,12 +177,13 @@ class Sidebar:
                         setting.textbox.highlighted = False
         
         elif event.type == MOUSEBUTTONUP:
-            # Release the slider
+            # Release the slider/scrollbar
             self.last_scroll_pos = None
             self.selected_slider = None
 
         elif event.type == MOUSEMOTION:
             if self.selected_slider:
+                # Update the value in real time
                 self.selected_slider.update_pos(pygame.mouse.get_pos())
                 self.selected_slider.apply_value(self.settings) # Apply settings in real time
         
@@ -196,7 +198,7 @@ class Sidebar:
                 elif event.key == K_RIGHT:
                     self.selected_textbox.highlighted = False
                 else:
-                    self.selected_textbox.check_typing_event(event)
+                    self.selected_textbox.check_typing_event(event) # Check it's a valid key
 
 
 class Setting:
@@ -226,14 +228,20 @@ class Setting:
         self.height = setting_y_margins * 2 + self.title.rect.height + self.textbox.rect.height + 4
     
     def create_title(self, top_left):
+        """Creates the setting name text at the top of the setting."""
+
         title = Text(self.name.capitalize(), self.font_name, 15, self.text_color, top_left)
         self.title = title
     
     def create_textbox(self, top_left):
+        """Creates a textbox below the title for editing the setting value."""
+
         textbox = TextBox(self, str(self.value), self.font_name, 150, 15, top_left, self.text_color)
         self.textbox = textbox
     
     def create_slider(self, top_left):
+        """Creates a slider below the textbox for quickly editing the setting value."""
+        
         slider = Slider(self, self.value, self.min_value, self.max_value, 150, 20, top_left, self.slider_color, self.shade_color)
         self.slider = slider
     
@@ -244,10 +252,10 @@ class Setting:
     
     def get_accents(self, color):
         def reduce(c):
-            return max(c - 100, 0)
+            return max(c - 30, 0)
 
         def increase(c):
-            return max(c - 30, 0)
+            return min(c + 30, 255)
 
         return [tuple([reduce(c) for c in color]), tuple([increase(c) for c in color])]
 
@@ -287,13 +295,21 @@ class Button:
 
         new_rect = get_offset_rect(self.rect, offset)
         if self.active:
-            pygame.draw.rect(screen, self.button_color, new_rect, border_radius=2)
+            self.text.set_color(self.text_color)
+            pygame.draw.rect(screen, self.button_accents[1], (new_rect.left, new_rect.top, new_rect.width - 2, new_rect.height - 2), border_radius=2)
+            pygame.draw.rect(screen, self.button_accents[0], (new_rect.left + 2, new_rect.top + 2, new_rect.width - 2, new_rect.height - 2), border_radius=2)
+        else:
+            self.text.set_color(tuple([c + 50 for c in self.text_color]))
+            pygame.draw.rect(screen, self.button_accents[0], (new_rect.left, new_rect.top, new_rect.width - 2, new_rect.height - 2), border_radius=2)
+            pygame.draw.rect(screen, self.button_accents[1], (new_rect.left + 2, new_rect.top + 2, new_rect.width - 2, new_rect.height - 2), border_radius=2)
+        
+        pygame.draw.rect(screen, self.button_color, (new_rect.left + 2, new_rect.top + 2, new_rect.width - 4, new_rect.height - 4), border_radius=2)
         
         self.text.draw(screen, offset)
-        if self.active:
-            pygame.draw.rect(screen, self.button_accents[0], new_rect, 1, 2)
-        else:
-            pygame.draw.rect(screen, self.button_accents[1], new_rect, 1, 2)
+        # if self.active:
+        #     pygame.draw.rect(screen, self.button_accents[0], new_rect, 1, 2)
+        # else:
+        #     pygame.draw.rect(screen, self.button_accents[1], new_rect, 1, 2)
 
 
 class TextBox:
@@ -455,7 +471,7 @@ class Slider:
 
         rect = get_offset_rect(self.rect, offset)
         pygame.draw.line(screen, self.slide_line_color, rect.midleft, rect.midright)
-        pygame.draw.line(screen, self.accents[0], (rect.midleft[0], rect.midleft[1] + 1), (rect.midright[0], rect.midright[1] + 1))
+        pygame.draw.line(screen, self.accents[1], (rect.midleft[0], rect.midleft[1] + 1), (rect.midright[0], rect.midright[1] + 1))
         x_pos = rect.left + (self.value - self.min_val) * self.ratio
         pygame.draw.rect(screen, self.accents[0], (x_pos - 5, rect.top, 10, self.height))
         pygame.draw.rect(screen, self.accents[1], (x_pos - 2, rect.top, 8, self.height - 2))
@@ -480,9 +496,16 @@ class Text:
         """This function pre-renders the given text/font and finds its rect bounds
         so these are not calculated each time. They can simply be blit."""
 
-        self.surf = self.font.render(self.text, False, self.color)
+        self.render()
         self.rect = self.surf.get_rect()
         self.rect.topleft = list(self.top_left)
+    
+    def render(self):
+        self.surf = self.font.render(self.text, False, self.color)
+    
+    def set_color(self, color):
+        self.color = color
+        self.render()
     
     def draw(self, screen, offset=Vector(0, 0)):
         """Blits the rendered text to the screen at the position of rect."""
