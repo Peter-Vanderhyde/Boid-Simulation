@@ -79,10 +79,11 @@ settings = {
     }
 }
 
+# Copy settings by value not reference
 default_settings = copy.deepcopy(settings)
 
 def get_random_direction():
-    """A function that returns a simple random vector direction
+    """A function that returns a simple, biased random vector direction
     for spawning boids."""
 
     x, y = 0, 0
@@ -117,9 +118,9 @@ def create_boids(width, height, tree, num_of_boids=10):
 def delete_boids(boids, tree, amount):
     """Deletes the given amount of boids from the quad tree."""
 
-    amount = min(amount, len(boids))
+    amount = min(amount, len(boids)) # Make sure it's possible to delete that many
     for _ in range(amount):
-        boid = random.choice(boids)
+        boid = random.choice(boids) # Delete random boids
         tree.remove_boid(boid)
         boids.remove(boid)
 
@@ -129,9 +130,10 @@ def main(width=1920, height=1080):
 
     FPS = 60
     clock = pygame.time.Clock() # Allows pygame to limit the fps to save on performance
-    last_frame = time.time()
+    last_frame = time.time() # Will be used for dt
 
     canvas = Canvas(width, height, (27, 32, 33), settings, default_settings) # The canvas handles drawing and events
+    # Specifications for the sidebar of settings
     canvas.create_sidebar(width=250,
                           margins=(10, 10),
                           bg_color=(206, 208, 143),
@@ -141,7 +143,11 @@ def main(width=1920, height=1080):
         canvas.sidebar.add_setting(key)
     
     width, height = canvas.width, canvas.height
-    tree = quad_tree.create_tree(5000, 5000, Vector(width // 2, height // 2), 25, 15)
+    tree = quad_tree.create_tree(5000,
+                                 5000,
+                                 Vector(width // 2, height // 2),
+                                 settings["max per node"]["value"],
+                                 settings["min per node"]["value"])
     canvas.tree = tree
     boids = create_boids(width, height, tree=tree, num_of_boids=settings["boids"]["value"])
 
