@@ -246,11 +246,16 @@ class Setting:
         self.slider = slider
     
     def create_button(self):
+        """Creates a button for reseting to default values."""
+
         x, y = self.textbox.rect.midright
         button = Button(self, self.font_name, 70, 15, (x + 3, y), self.text_color, self.slider_color, self.get_accents(self.slider_color))
         self.button = button
     
     def get_accents(self, color):
+        """Creates accent colors of a given color for shadow or highlights."""
+
+        # Makes sure the colors are legitimate
         def reduce(c):
             return max(c - 30, 0)
 
@@ -260,12 +265,17 @@ class Setting:
         return [tuple([reduce(c) for c in color]), tuple([increase(c) for c in color])]
 
     def update_button(self):
+        """Checks whether the setting value is the default or not to activate
+        or deactivate the button."""
+
         if self.settings[self.name]["value"] == self.default_settings[self.name]["value"]:
             self.button.active = False
         else:
             self.button.active = True
     
     def draw(self, screen, offset_y):
+        """Draw all of the setting elements on the sidebar."""
+
         self.title.draw(screen, Vector(0, offset_y))
         self.textbox.draw(screen, Vector(0, offset_y))
         self.slider.draw(screen, Vector(0, offset_y))
@@ -273,7 +283,7 @@ class Setting:
 
 
 class Button:
-    """This is for a button that returns the value back to the default."""
+    """This is for a button that returns the setting's value back to the default."""
 
     def __init__(self, parent, font_name, width, height, mid_left, text_color, button_color, button_accents):
         self.parent = parent
@@ -288,12 +298,12 @@ class Button:
         self.rect.midleft = mid_left
         self.text = Text("Default", font_name, height, text_color, self.rect.topleft)
         self.text.rect.center = self.rect.center
-        self.active = False
+        self.active = False # Whether it can be pressed or not
     
     def draw(self, screen, offset=Vector(0, 0)):
         """Draws the button to the screen."""
 
-        new_rect = get_offset_rect(self.rect, offset)
+        new_rect = get_offset_rect(self.rect, offset) # Take scroll into account
         if self.active:
             self.text.set_color(self.text_color)
             pygame.draw.rect(screen, self.button_accents[1], (new_rect.left, new_rect.top, new_rect.width - 2, new_rect.height - 2), border_radius=2)
@@ -306,10 +316,6 @@ class Button:
         pygame.draw.rect(screen, self.button_color, (new_rect.left + 2, new_rect.top + 2, new_rect.width - 4, new_rect.height - 4), border_radius=2)
         
         self.text.draw(screen, offset)
-        # if self.active:
-        #     pygame.draw.rect(screen, self.button_accents[0], new_rect, 1, 2)
-        # else:
-        #     pygame.draw.rect(screen, self.button_accents[1], new_rect, 1, 2)
 
 
 class TextBox:
@@ -331,29 +337,30 @@ class TextBox:
         """Changes the text value, then makes sure it can fit all characters in the textbox."""
 
         self.text.set_text(value)
-        if self.text.rect.width > self.rect.width:
+        if self.text.rect.width > self.rect.width: # Too wide to fit
+            # Ignore the new value and go back to previous
             self.text.set_text(self.value)
         else:
             self.value = value
     
     def apply_value(self, settings):
-        """This function is used when the user enters the value. It will
-        then change send its value to the slider/settings."""
+        """This function is used when the user enters confirms the new value.
+        It will then change the setting and update the slider."""
 
-        self.value = self.value or "0"
-        value = float(self.value) or 0.0 # Default the value to 0 if there's no value
+        self.value = self.value or "0" # Default to 0 if empty string entered
+        value = float(self.value) or 0.0 # Default the value to 0.0 if string is not number
         setting = settings[self.parent.name]
-        setting["value"] = min(setting["max"], max(setting["min"], value)) # Make sure within bounds
+        setting["value"] = min(setting["max"], max(setting["min"], value)) # Make sure entered value is within bounds
         if setting["value"] == int(setting["value"]): # Doesn't need to show decimals
-            self.set_value(str(int(setting["value"])))
+            self.set_value(str(int(setting["value"]))) # Remove unnecessary trailing 0s
         else:
             self.set_value(str(setting["value"]))
         
-        self.parent.slider.set_value(setting["value"])
+        self.parent.slider.set_value(setting["value"]) # Update slider/setting
         self.parent.update_button()
     
     def check_typing_event(self, event):
-        """This will edit the value based on values typed."""
+        """Checks for valid input while textbox is selected."""
 
         if event.key == K_BACKSPACE:
             if self.value:
@@ -363,7 +370,7 @@ class TextBox:
                 else:
                     self.set_value(self.value[:-1]) # Only delete one char
         
-        # Checks if number or - or . and in the right context
+        # Checks if number or leading '-' or '.' and in the correct context
         elif event.dict["unicode"].isdigit() or \
                 (event.dict["unicode"] == "." and "." not in self.value) or \
                 ((self.value == "" or self.highlighted) and event.dict["unicode"] == "-"):
@@ -378,7 +385,7 @@ class TextBox:
     def draw(self, screen, offset=Vector(0, 0)):
         """Creates the bounding box and shows the text."""
 
-        rect = get_offset_rect(self.rect, offset)
+        rect = get_offset_rect(self.rect, offset) # Account for scroll
         if self.selected:
             # Make the background white
             pygame.draw.rect(screen, (255, 255, 255), rect, border_radius=5)
@@ -387,11 +394,12 @@ class TextBox:
             pygame.draw.rect(screen, (225, 225, 225), rect, border_radius=5)
         
         if self.highlighted:
-            # Create a blue highlight border around the text
+            # Create a blue highlight over the text
             text_rect = get_offset_rect(self.text.rect, offset)
             text_rect.width += 5
             pygame.draw.rect(screen, (50, 100, 212), text_rect, border_radius=5)
         
+        # Draw border
         if not self.selected:
             pygame.draw.rect(screen, (150, 150, 150), rect, 1, border_radius=5)
         else:
@@ -410,18 +418,22 @@ class Slider:
     def __init__(self, parent, value, min_val, max_val, width, height, top_left, slider_color, text_color):
         self.parent = parent # Link to the parent setting for changing the settings and textbox
         self.value = value
+        # Set range
         self.min_val = min_val
         self.max_val = max_val
         self.width = width
         self.height = height
         self.top_left = top_left
         self.slider_color = slider_color
-        self.accents = self.get_accents(self.slider_color)
+        self.accents = self.get_accents(self.slider_color) # Get highlight and shadow accents
         self.slide_line_color = text_color
         self.rect = Rect(top_left.x, top_left.y, width, height)
-        self.ratio = self.get_ratio() # The pixel to value ratio
+        self.ratio = self.get_ratio() # The pixel to value ratio based on width
     
     def get_accents(self, color):
+        """Get the highlight and shadow accents of a color."""
+
+        # Make sure the color is legit
         def reduce(c):
             return max(c - 30, 0)
 
@@ -438,7 +450,7 @@ class Slider:
         return ratio
     
     def set_value(self, value):
-        """Sets the value within the bounds."""
+        """Clamps value to within bounds."""
 
         value = min(self.max_val, max(self.min_val, value))
         self.value = value
@@ -447,12 +459,13 @@ class Slider:
         """Changes the settings and also the textbox value."""
 
         setting = settings[self.parent.name]
-        setting["value"] = round(self.value, 4)
+        setting["value"] = round(self.value, 4) # Shorten value so not infinite decimal length
         self.parent.textbox.set_value(str(setting["value"]))
         self.parent.update_button()
     
     def update_pos(self, pos):
-        """Moves the slider to the correct x position and sets the value based on the position."""
+        """Moves the slider to the x position of mouse and
+         calculates a value based on the position."""
 
         x_pos = max(self.rect.left, min(self.rect.right, pos[0])) # Make sure the mouse is within the bounds
         if pos[0] >= self.rect.right:
@@ -501,26 +514,29 @@ class Text:
         self.rect.topleft = list(self.top_left)
     
     def render(self):
+        """Renders text to create a surface or when its color is changed."""
+
         self.surf = self.font.render(self.text, False, self.color)
     
     def set_color(self, color):
+        """Changes text color and renders the new colored text."""
+
         self.color = color
         self.render()
     
     def draw(self, screen, offset=Vector(0, 0)):
-        """Blits the rendered text to the screen at the position of rect."""
+        """Blits the rendered text to the screen at the position of its set rect."""
         
         if not self.text:
             return # Skips trying to display if there isn't any text to display
         
-        if list(offset) == (0, 0):
+        if list(offset) == [0, 0]: # Doesn't need to account for scroll
             screen.blit(self.surf, self.rect)
         else:
             screen.blit(self.surf, get_offset_rect(self.rect, offset))
     
     def set_text(self, text):
-        """Changes the text value and then renders the text again."""
+        """Changes the text value and then creates a new surface and rect."""
 
         self.text = text
-        if self.text:
-            self.create_surf()
+        self.create_surf()
