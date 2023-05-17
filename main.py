@@ -1,3 +1,7 @@
+# Peter Vanderhyde
+# Boid Simulation Capstone Project
+# 5/17/23
+
 import random
 import pygame
 from pygame.locals import *
