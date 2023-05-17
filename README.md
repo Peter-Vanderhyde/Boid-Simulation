@@ -10,6 +10,8 @@ This is a python/pygame project that simulates boids. It allows for a fairly lar
 ## Requirements
 - **Python**
 - **Pygame**
+
+Pygame can be installed after Python is installed by opening the terminal and typing:
 ``` cmd
 pip install pygame
 ```
@@ -69,17 +71,3 @@ This is a setting for the quad tree used for boid visualization. It sets the min
 
 ### Max Per Node
 This setting is tells the quad tree what the maximum number of boids that can exist within a node/quadrant is. Anything bigger and the node needs to split and place its boids into child nodes.
-
-## Custom Settings
-In order to add custom settings to the sidebar that can be used within the code, the setting can easily be added within ***main.py***. Inside the settings dictionary, add the name of the setting then give it a default value, a minimum value, and a maximum value.
-```python
-"setting name": {
-    "value": 15,
-    "min": 1,
-    "max": 50
-}
-```
-To access the setting in the code: 
-``` python
-setting = settings["setting name"]["value"]
-```
