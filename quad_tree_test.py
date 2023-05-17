@@ -8,17 +8,23 @@ from boid import Boid
 
 class TestQuadTreeMethods(unittest.TestCase):
     def setUp(self):
+        """Sets up an empty tree before every test."""
+
         self.tree = qt.QuadTree(Vector(-1000, -1000), Vector(1000, 1000), max_nodes=3, min_nodes=2)
         self.tree.nodes = []
         self.tree.node_count = 0
         self.tree.clear_children()
     
     def test_1_node(self):
+        """Test node creation."""
+
         b = Boid({}, Vector(100, 100))
         n = qt.Node(b)
         self.assertEqual((n.x, n.y), (b.position.x, b.position.y))
     
     def test_2_quad_root_insert(self):
+        """Test first inserts into the root node and insert edge cases."""
+
         n = qt.Node(Boid({}, Vector(100, 100)))
         self.tree.insert_node(n)
         with self.subTest("Node inserted in root."):
@@ -50,6 +56,8 @@ class TestQuadTreeMethods(unittest.TestCase):
             self.assertRaises(RuntimeError, self.tree.insert_node, qt.Node(Boid({}, Vector(1001, 0))))
     
     def test_3_quad_divide(self):
+        """Test that dividing large quads works."""
+
         n1 = qt.Node(Boid({}, Vector(100, 100)))
         self.tree.insert_node(n1)
         n2 = qt.Node(Boid({}, Vector(-100, 100)))
@@ -70,6 +78,8 @@ class TestQuadTreeMethods(unittest.TestCase):
             self.assertTrue(self.tree.nodes == [] and self.tree.node_count == 2)
     
     def test_4_quad_insert_divide(self):
+        """Test that the nodes will divide when a boid is inserted into a max capacity leaf."""
+
         self.tree.insert_node(qt.Node(Boid({}, Vector(220, 220))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(20, 20))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(-220, 220))))
@@ -85,6 +95,8 @@ class TestQuadTreeMethods(unittest.TestCase):
             )
         
     def test_5_quad_insert_children(self):
+        """Test that inserts move beyond the root into the correct children."""
+
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, 10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(-10, 10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, -10))))
@@ -93,6 +105,8 @@ class TestQuadTreeMethods(unittest.TestCase):
         self.assertEqual(self.tree.children["br"].node_count, 2)
     
     def test_6_quad_reabsorb(self):
+        """Test that reabsorbing nodes from children works."""
+
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, 10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(100, 10))))
         self.tree.insert_node(qt.Node(Boid({}, Vector(10, -10))))
@@ -108,6 +122,8 @@ class TestQuadTreeMethods(unittest.TestCase):
             )
     
     def test_7_quad_remove_node(self):
+        """Test that removing nodes removes in all cases."""
+
         n = qt.Node(Boid({}, Vector(10, 10)))
         self.tree.insert_node(n)
         with self.subTest("No error thrown when removing non-existent node."):
@@ -138,6 +154,8 @@ class TestQuadTreeMethods(unittest.TestCase):
             )
     
     def test_8_quad_possible_nodes(self):
+        """Test that a possible overlap test finds all the nodes in eligible children."""
+
         n1 = qt.Node(Boid({}, Vector(100, 100)))
         n2 = qt.Node(Boid({}, Vector(800, -500)))
         self.tree.insert_node(n1)
@@ -150,6 +168,8 @@ class TestQuadTreeMethods(unittest.TestCase):
                         "Didn't find the correct possible nodes")
 
     def test_9_quad_in_radius(self):
+        """Check that only possible boids within radius are chosen."""
+        
         n1 = qt.Node(Boid({}, Vector(10, 5)))
         n2 = qt.Node(Boid({}, Vector(0, 100)))
         pos = Vector(7, 4)
