@@ -29,13 +29,15 @@ class QuadTree:
         self.min_nodes = min_nodes # Node number at which a parent will reabsorb its kids' nodes
         self.node_count = len(nodes) # The number of total nodes whithin all children combined
         self.leaf = True
-        self.tl_corner = top_left
+        self.tl_corner = top_left # The extreme corners of the tree
         self.br_corner = bottom_right
         self.center = Vector((self.tl_corner.x + self.br_corner.x) // 2, (self.tl_corner.y + self.br_corner.y) // 2)
         self.rect = Rect(top_left, bottom_right - top_left)
         self.clear_children()
     
     def clear_children(self):
+        """All children are removed."""
+
         self.children = {
             "tl":None,
             "tr":None,
@@ -44,13 +46,17 @@ class QuadTree:
         }
     
     def remove_boid(self, boid):
+        """Creates a node from a given boid and is used to remove that boid from the tree."""
+
         self.remove_node(Node(boid))
     
     def insert_boid(self, boid):
+        """Creates a node based off the given boid to insert in the tree."""
+
         self.insert_node(Node(boid))
     
     def get_child(self, string):
-        """Returns the child tree object based on the given child string."""
+        """Returns the child tree object based on the given child string [bl,br,tl,tr]."""
 
         try:
             return self.children[string]
@@ -58,7 +64,7 @@ class QuadTree:
             raise RuntimeError(f"Unable to retrieve child with the string '{string}'.")
 
     def set_child(self, string, tree):
-        """Sets the child tree object of the given child string."""
+        """Sets the child tree object of the given child string. Can be None."""
 
         if tree is None or type(tree) == QuadTree:
             self.children[string] = tree
@@ -66,9 +72,8 @@ class QuadTree:
             raise TypeError("Attempted to set child as non quadtree type.")
     
     def node_within_bounds(self, n):
-        """Returns the string of which child quad the node is inside."""
+        """Returns bool of whether node is within the current node's coordinate bounds."""
 
-        x, y = self.center
         tx, ty = self.tl_corner
         bx, by = self.br_corner
         return tx <= n.x <= bx and ty <= n.y <= by
@@ -154,10 +159,10 @@ class QuadTree:
         if self.leaf:
             self.nodes.append(n)
             self.node_count += 1
+            # Check if needs/can subdivide
             if len(self.nodes) > self.max_nodes and\
                     abs(self.tl_corner.x - self.br_corner.x) >= 4 and\
                     abs(self.tl_corner.y - self.br_corner.y) >= 4: # There's room for more subtrees
-                # The node has too many objects, so it will subdivide
                 self.divide()
         else:
             child_string = self.find_child_string_for_node(n)
@@ -169,6 +174,8 @@ class QuadTree:
                 child.insert_node(n)
             
             self.node_count += 1
+            # Keeps track of number of nodes in children too in case
+            # it needs to reabsorb them.
     
     def get_all_leaves(self):
         """Finds all of the leaves' nodes within itself/its children."""
@@ -245,7 +252,7 @@ class QuadTree:
     
     def get_boids_in_sight(self, boid):
         """This finds all boids within sight of this boid based on the boids'
-        position and view distance."""
+        position and view radius."""
 
         nodes = self.find_points_in_radius(boid.position,
                                            max(boid.settings["view distance"]["value"],
