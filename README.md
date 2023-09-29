@@ -6,6 +6,8 @@
 
 ## Description
 This is a python/pygame project that simulates boids. It allows for a fairly large number of boids at decent speeds due to a quad tree being used for boid interaction. The simulation includes a sidebar where different settings can be altered in real time.
+  
+![boids](https://github.com/Peter-Vanderhyde/Boid-Simulation/assets/71889138/3221fe1f-8346-48eb-9493-ba10708dbfce)
 
 ## Requirements
 - **Python**
